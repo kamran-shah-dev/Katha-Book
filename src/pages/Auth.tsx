@@ -129,7 +129,7 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">
-            Import/Export Accounting
+            <img src="/logo.jpeg" alt="Katha Book Logo" className="mx-auto h-30 w-60 mb-2" />
           </CardTitle>
           <CardDescription>
             {isLogin ? 'Login to access your Katha Book' : 'Create your account'}

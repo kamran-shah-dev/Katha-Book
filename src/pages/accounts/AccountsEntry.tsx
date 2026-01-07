@@ -245,7 +245,7 @@ export default function AccountsEntry() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Form */}
-        <Card className="lg:col-span-1 border-black/40 bg-green-800 text-white">
+        <Card className="lg:col-span-1 border-sky-600 bg-sky-200">
           <CardHeader className="py-3">
             <CardTitle className="text-lg">
               {selectedAccount ? 'Edit Account' : 'New Account'}
@@ -386,7 +386,7 @@ export default function AccountsEntry() {
         </Card>
 
         {/* Table */}
-        <Card className="lg:col-span-2 border-black/40">
+        <Card className="lg:col-span-2 border-sky-600">
           <CardHeader className="py-3 flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Accounts List</CardTitle>
             <div className="flex items-center gap-2">

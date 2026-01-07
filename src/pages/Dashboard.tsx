@@ -80,43 +80,7 @@ export default function Dashboard() {
     fetchStats();
   }, []);
 
-  const statCards = [
-    {
-      title: 'Total Accounts',
-      value: stats.totalAccounts,
-      icon: Users,
-      link: '/accounts',
-      color: 'text-blue-600',
-    },
-    {
-      title: 'Products',
-      value: stats.totalProducts,
-      icon: Package,
-      link: '/utility/products',
-      color: 'text-green-600',
-    },
-    {
-      title: 'Goods Received',
-      value: stats.totalGoodsReceived,
-      icon: Truck,
-      link: '/goods-received',
-      color: 'text-orange-600',
-    },
-    {
-      title: 'Export Entries',
-      value: stats.totalExports,
-      icon: ArrowUpRight,
-      link: '/export',
-      color: 'text-purple-600',
-    },
-    {
-      title: 'Invoices',
-      value: stats.totalInvoices,
-      icon: FileText,
-      link: '/invoice',
-      color: 'text-pink-600',
-    },
-  ];
+  
 
   if (loading) {
     return (
@@ -159,7 +123,7 @@ export default function Dashboard() {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {statCards.map((card) => (
           <Link key={card.title} to={card.link}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
@@ -175,7 +139,7 @@ export default function Dashboard() {
             </Card>
           </Link>
         ))}
-      </div>
+      </div> */}
 
       {/* Quick Actions */}
       <Card>
