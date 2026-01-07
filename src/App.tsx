@@ -31,7 +31,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const ProtectedPage = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute><MainLayout>{children}</MainLayout></ProtectedRoute>
+  <MainLayout>{children}</MainLayout>
 );
 
 const App = () => (
@@ -43,15 +43,23 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+
+            {/* dashboard available at /dashboard */}
+            <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+
+            {/* existing home route also shows dashboard */}
             <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+
             <Route path="/accounts" element={<ProtectedPage><AccountsEntry /></ProtectedPage>} />
             <Route path="/cashbook" element={<ProtectedPage><CashbookEntry /></ProtectedPage>} />
             <Route path="/goods-received" element={<ProtectedPage><GoodsReceivedEntry /></ProtectedPage>} />
             <Route path="/export" element={<ProtectedPage><ExportEntry /></ProtectedPage>} />
             <Route path="/invoice" element={<ProtectedPage><InvoiceEntry /></ProtectedPage>} />
+
             <Route path="/utility/products" element={<ProtectedPage><ProductsPage /></ProtectedPage>} />
             <Route path="/utility/vehicles" element={<ProtectedPage><VehiclesPage /></ProtectedPage>} />
             <Route path="/utility/import" element={<ProtectedPage><DataImport /></ProtectedPage>} />
+
             <Route path="/reports/ledger" element={<ProtectedPage><LedgerReport /></ProtectedPage>} />
             <Route path="/reports/accounts-balance" element={<ProtectedPage><AccountsBalanceReport /></ProtectedPage>} />
             <Route path="/reports/sub-head-balance" element={<ProtectedPage><SubHeadBalanceReport /></ProtectedPage>} />
@@ -62,6 +70,7 @@ const App = () => (
             <Route path="/reports/gd-search" element={<ProtectedPage><GDSearch /></ProtectedPage>} />
             <Route path="/reports/product" element={<ProtectedPage><ProductReport /></ProtectedPage>} />
             <Route path="/reports/credit-debit" element={<ProtectedPage><CreditDebitReport /></ProtectedPage>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
@@ -69,5 +78,6 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
+
 
 export default App;
