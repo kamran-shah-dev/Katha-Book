@@ -21,21 +21,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { logout } = useAuth();
   const location = useLocation();
 
-  // Dropdown states for Reports & Utility
   const [openReports, setOpenReports] = useState(false);
   const [openUtility, setOpenUtility] = useState(false);
 
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/" },
-
     { name: "Accounts", icon: Users, path: "/accounts" },
-
     { name: "Cashbook", icon: BookOpen, path: "/cashbook" },
-
     { name: "Goods Received", icon: Truck, path: "/goods-received" },
-
     { name: "Export", icon: FolderSearch, path: "/export" },
-
     { name: "Invoice", icon: FileText, path: "/invoice" },
 
     {
@@ -56,9 +50,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       icon: Wrench,
       toggle: () => setOpenUtility(!openUtility),
       open: openUtility,
-      children: [
-        { name: "Data Import", path: "/utility/import" }
-      ],
+      children: [{ name: "Data Import", path: "/utility/import" }],
     },
   ];
 
@@ -68,22 +60,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
       {/* LEFT SIDEBAR */}
       <aside className="w-64 h-screen fixed left-0 top-0 bg-[#3B2F2F] text-[#EEDFCC] flex flex-col shadow-xl overflow-hidden">
 
-        {/* LOGO */}
-        <div className="p-6 text-2xl font-bold border-b border-[#6F4E37]">
+        <div className="p-6 text-2xl font-bold border-4 border-[#6F4E37] bg-white">
           <img src="/logo.jpeg" alt="Katha Book Logo" className="h-12 w-32 mx-auto" />
         </div>
 
-        {/* MENU ITEMS */}
-        <nav className="flex-1">
+        <nav className="flex-1 overflow-y-auto">
           <ul className="space-y-1 p-3">
 
             {menuItems.map((item) => {
               const Icon = item.icon;
-
               const isActiveParent =
                 item.children?.some((child) => location.pathname === child.path);
 
-              // Handle items with children (dropdown)
               if (item.children) {
                 return (
                   <li key={item.name}>
@@ -97,16 +85,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         <Icon size={20} />
                         {item.name}
                       </span>
-
                       <span>{item.open ? "▾" : "▸"}</span>
                     </button>
 
-                    {/* Submenu */}
                     {item.open && (
                       <ul className="ml-6 mt-1 space-y-1">
                         {item.children.map((child) => {
                           const activeChild = location.pathname === child.path;
-
                           return (
                             <li key={child.path}>
                               <Link
@@ -130,7 +115,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 );
               }
 
-              // Normal (non-dropdown) menu items
               const active = location.pathname === item.path;
 
               return (
@@ -138,11 +122,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   <Link
                     to={item.path}
                     className={`flex items-center gap-3 p-3 rounded-md transition-all
-                      ${
-                        active
-                          ? "bg-[#5C4033] text-white"
-                          : "hover:bg-[#4A352D]"
-                      }
+                      ${active ? "bg-[#5C4033] text-white" : "hover:bg-[#4A352D]"}
                     `}
                   >
                     <Icon size={20} />
@@ -155,7 +135,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ul>
         </nav>
 
-        {/* LOGOUT BUTTON */}
         <button
           onClick={logout}
           className="m-3 flex items-center gap-3 p-3 rounded-md bg-[#5C4033] text-white hover:bg-[#4A352D] transition"
@@ -166,10 +145,37 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 ml-64 p-6 bg-background">
-        {children}
-      </main>
+      {/* MAIN CONTENT AREA + FOOTER */}
+      <div className="flex flex-col flex-1 ml-64 min-h-screen">
+
+        <main className="flex-1 p-6 bg-background overflow-auto">
+          {children}
+
+          
+        </main>
+
+        {/* FOOTER */}
+        <footer className="bg-[#3B2F2F] text-[#EEDFCC] text-center py-3 border-t border-[#6F4E37]">
+          <span>
+            Developed By:{" "}
+            <a
+              href="https://addsmint.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-white"
+            >
+              AddsMint.com
+            </a>
+            {" "} - Helpline{" "}
+            <a href="tel:+923172525091" className="underline hover:text-white">
+              +92 317 2525091
+            </a>
+          </span>
+        </footer>
+
+
+      </div>
+
     </div>
   );
 }

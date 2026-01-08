@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import {
   Card,
   CardContent,
@@ -18,8 +17,7 @@ import { db } from "@/firebaseConfig";
 
 import bcrypt from "bcryptjs";
 import { Eye, EyeOff } from "lucide-react";
-
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";   // ✅ IMPORT THIS
 
 export default function Auth() {
   const [phone, setPhone] = useState("");
@@ -30,7 +28,7 @@ export default function Auth() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
-  const { login } = useAuth(); // USE AUTH CONTEXT
+  const { login } = useAuth();   // ✅ GET login() from context
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +56,11 @@ export default function Auth() {
         return;
       }
 
-      // CALL AUTH CONTEXT LOGIN
+      // ✅ CALL CONTEXT LOGIN (updates auth state properly)
       login(phone);
 
-      navigate("/dashboard");
+      // Redirect to dashboard
+      navigate("/dashboard", { replace: true });
 
     } catch (error) {
       console.error("Login error:", error);
@@ -72,60 +71,79 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center 
-      bg-gradient-to-br from-[#3b2f2f] via-[#4b3a3a] to-[#2d2525] p-6">
-
-      <Card className="w-full max-w-md bg-white/95 shadow-2xl rounded-2xl">
-
+    <div
+      className="min-h-screen w-full flex items-center justify-center 
+      bg-gradient-to-br from-[#3b2f2f] via-[#4b3a3a] to-[#2d2525] p-6"
+    >
+      <Card className="w-full max-w-md bg-white/95 shadow-2xl rounded-2xl border border-gray-300">
+        
         <CardHeader className="text-center">
           <CardTitle>
-            <img src="/logo.jpeg" className="mx-auto h-28 mb-2" />
+            <img
+              src="/logo.jpeg"
+              alt="Katha Book Logo"
+              className="mx-auto h-28 w-auto mb-2"
+            />
           </CardTitle>
-          <CardDescription className="text-gray-600 text-base">
+
+          <CardDescription className="text-base text-gray-600 font-medium">
             Login to access your Katha Book
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-5">
-
-            <div>
-              <Label>Phone Number</Label>
+            
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
               <Input
+                id="phone"
                 type="text"
+                className="h-12 rounded-lg border-2 border-gray-300"
+                placeholder="0312xxxxxxx"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                disabled={loading}
               />
             </div>
 
-            <div className="relative">
-              <Label>Password</Label>
+            <div className="space-y-2 relative">
+              <Label htmlFor="password">Password</Label>
               <Input
+                id="password"
                 type={showPass ? "text" : "password"}
+                className="h-12 rounded-lg border-2 border-gray-300 pr-10"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pr-10"
+                disabled={loading}
               />
+
               <button
                 type="button"
                 onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-9 text-gray-600"
+                className="absolute right-3 top-10 -translate-y-1/2 text-gray-600"
               >
-                {showPass ? <EyeOff /> : <Eye />}
+                {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
 
             {errorMsg && (
-              <p className="text-center text-red-600">{errorMsg}</p>
+              <p className="text-red-600 text-sm text-center font-semibold">
+                {errorMsg}
+              </p>
             )}
 
-            <Button className="w-full h-12 bg-[#6b4f4f]">
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-semibold bg-[#6b4f4f]"
+              disabled={loading}
+            >
               {loading ? "Please wait..." : "Login"}
             </Button>
 
           </form>
         </CardContent>
-
       </Card>
     </div>
   );

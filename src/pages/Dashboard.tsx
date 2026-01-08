@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  BookOpen,
+  FileText,
+  FolderSearch,
+  Users,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, Wallet } from "lucide-react";
 
@@ -68,7 +75,63 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+
+        
       </div>
+
+      {/* QUICK REPORT LINKS */}
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+          {/* Cashbook Report */}
+          <Link
+            to="/reports/cashbook"
+            className="flex items-center gap-3 p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition border border-[#6F4E37]"
+          >
+            <BookOpen className="h-8 w-8 text-[#6F4E37]" />
+            <div>
+              <p className="text-lg font-semibold text-[#3B2F2F]">Cashbook Report</p>
+              <p className="text-sm text-gray-500">Daily transactions summary</p>
+            </div>
+          </Link>
+
+          {/* Account Ledger Report */}
+          <Link
+            to="/reports/ledger"
+            className="flex items-center gap-3 p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition border border-[#6F4E37]"
+          >
+            <FileText className="h-8 w-8 text-[#6F4E37]" />
+            <div>
+              <p className="text-lg font-semibold text-[#3B2F2F]">Account Ledger</p>
+              <p className="text-sm text-gray-500">View party-wise ledger</p>
+            </div>
+          </Link>
+
+          {/* Credit & Debit Report */}
+          <Link
+            to="/reports/credit-debit"
+            className="flex items-center gap-3 p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition border border-[#6F4E37]"
+          >
+            <FolderSearch className="h-8 w-8 text-[#6F4E37]" />
+            <div>
+              <p className="text-lg font-semibold text-[#3B2F2F]">Credit & Debit</p>
+              <p className="text-sm text-gray-500">Complete account movements</p>
+            </div>
+          </Link>
+
+          {/* Parties Report */}
+          <Link
+            to="/reports/parties"
+            className="flex items-center gap-3 p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition border border-[#6F4E37]"
+          >
+            <Users className="h-8 w-8 text-[#6F4E37]" />
+            <div>
+              <p className="text-lg font-semibold text-[#3B2F2F]">Parties Report</p>
+              <p className="text-sm text-gray-500">All party accounts summary</p>
+            </div>
+          </Link>
+
+        </div>
+
     </div>
   );
 }
