@@ -1,21 +1,36 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
+
 import bcrypt from "bcryptjs";
+import { Eye, EyeOff } from "lucide-react";
+
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Auth() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
+  const { login } = useAuth(); // USE AUTH CONTEXT
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,9 +48,9 @@ export default function Auth() {
       }
 
       const userData = userSnap.data();
-      const passwordHash = userData.passwordHash;
+      const storedHash = userData.passwordHash;
 
-      const match = await bcrypt.compare(password, passwordHash);
+      const match = await bcrypt.compare(password, storedHash);
 
       if (!match) {
         setErrorMsg("Invalid phone or password.");
@@ -43,7 +58,9 @@ export default function Auth() {
         return;
       }
 
-      localStorage.setItem("authUser", phone); // simple login session
+      // CALL AUTH CONTEXT LOGIN
+      login(phone);
+
       navigate("/dashboard");
 
     } catch (error) {
@@ -55,59 +72,54 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-300 p-4">
+    <div className="min-h-screen w-full flex items-center justify-center 
+      bg-gradient-to-br from-[#3b2f2f] via-[#4b3a3a] to-[#2d2525] p-6">
 
-      <Card className="w-full max-w-md shadow-2xl border border-gray-200 rounded-2xl bg-white/90 backdrop-blur-md">
+      <Card className="w-full max-w-md bg-white/95 shadow-2xl rounded-2xl">
 
         <CardHeader className="text-center">
           <CardTitle>
-            <img src="/logo.jpeg" alt="Katha Book Logo" className="mx-auto h-28 w-auto mb-2" />
+            <img src="/logo.jpeg" className="mx-auto h-28 mb-2" />
           </CardTitle>
-          <CardDescription className="text-base font-medium">
+          <CardDescription className="text-gray-600 text-base">
             Login to access your Katha Book
           </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+            <div>
+              <Label>Phone Number</Label>
               <Input
-                id="phone"
                 type="text"
-                placeholder="0312xxxxxxx"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                disabled={loading}
-                className="h-11"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Label>Password</Label>
               <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
+                type={showPass ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                className="h-11"
+                className="pr-10"
               />
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-3 top-9 text-gray-600"
+              >
+                {showPass ? <EyeOff /> : <Eye />}
+              </button>
             </div>
 
             {errorMsg && (
-              <p className="text-red-600 text-sm text-center font-medium">
-                {errorMsg}
-              </p>
+              <p className="text-center text-red-600">{errorMsg}</p>
             )}
 
-            <Button
-              type="submit"
-              className="w-full h-11 text-base font-semibold"
-              disabled={loading}
-            >
+            <Button className="w-full h-12 bg-[#6b4f4f]">
               {loading ? "Please wait..." : "Login"}
             </Button>
 

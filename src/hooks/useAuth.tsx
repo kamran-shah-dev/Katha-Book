@@ -14,7 +14,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const login = (phone: string) => {
-    localStorage.setItem("adminLoggedIn", phone); // store admin identifier
+    localStorage.setItem("adminLoggedIn", phone);
     setIsLoggedIn(true);
   };
 
@@ -31,9 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be inside AuthProvider");
+  return ctx;
 }
