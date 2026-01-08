@@ -31,8 +31,11 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const ProtectedPage = ({ children }: { children: React.ReactNode }) => (
-  <MainLayout>{children}</MainLayout>
+  <ProtectedRoute>
+    <MainLayout>{children}</MainLayout>
+  </ProtectedRoute>
 );
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
