@@ -77,9 +77,11 @@ export default function AccountsEntry() {
 
   /** FETCH ACCOUNTS */
   const fetchAccounts = () => {
-  // DEMO MODE: do nothing
+  // DEMO: start empty
+  setAccounts([]);
   setLoading(false);
 };
+
 
 
   useEffect(() => {
@@ -88,14 +90,13 @@ export default function AccountsEntry() {
 
   /** SAVE HANDLER */
   const onSubmit = (data: any) => {
-  // Assign a temporary ID because real DB not used yet
-  const newAccount = {
+  const newAcc = {
     ...data,
-    id: crypto.randomUUID(),  // unique id for demo
+    id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
   };
 
-  setAccounts((prev) => [...prev, newAccount]);
+  setAccounts(prev => [...prev, newAcc]);
   form.reset();
 
   toast({
@@ -105,27 +106,19 @@ export default function AccountsEntry() {
 };
 
 
+
   /** DELETE HANDLER */
-  const deleteAccount = async (id: string) => {
-    if (!confirm("Delete this account?")) return;
+  const deleteAccount = (id: string) => {
+  if (!confirm("Delete this account?")) return;
 
-    const { error } = await supabase
-      .from("accounts")
-      .delete()
-      .eq("id", id);
+  setAccounts(prev => prev.filter(acc => acc.id !== id));
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
+  toast({
+    title: "Removed",
+    description: "Account deleted (demo mode)",
+  });
+};
 
-    toast({ title: "Removed", description: "Account deleted" });
-    fetchAccounts();
-  };
 
 
   return (
