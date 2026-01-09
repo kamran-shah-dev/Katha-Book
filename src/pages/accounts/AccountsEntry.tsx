@@ -47,421 +47,347 @@ const accountSchema = z.object({
   sub_head: z.enum(['BANKS', 'DOLLAR_LEDGERS', 'EXPORT_PARTIES', 'IMPORT_PARTIES', 'NLC_TAFTAN_EXPENSE_LEDGERS', 'PERSONALS']),
   balance_status: z.enum(['CREDIT', 'DEBIT']),
   opening_balance: z.coerce.number().min(0),
+  ntn_number: z.string().max(50).optional(),
   address: z.string().max(200).optional(),
   cell_no: z.string().max(20).optional(),
-  limit_status: z.enum(['UNLIMITED', 'LIMITED']),
-  limit_amount: z.coerce.number().min(0).optional(),
   is_active: z.boolean(),
-  remarks: z.string().max(500).optional(),
 });
 
 type AccountFormData = z.infer<typeof accountSchema>;
 
 export default function AccountsEntry() {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { user } = useAuth();
+
   const { toast } = useToast();
 
-  const form = useForm<AccountFormData>({
+  const form = useForm({
     resolver: zodResolver(accountSchema),
     defaultValues: {
-      account_name: '',
-      sub_head: 'PERSONALS',
-      balance_status: 'DEBIT',
+      account_name: "",
+      sub_head: "PERSONALS",
+      balance_status: "DEBIT",
       opening_balance: 0,
-      address: '',
-      cell_no: '',
-      limit_status: 'UNLIMITED',
-      limit_amount: 0,
+      address: "",
+      cell_no: "",
+      ntn_number: "", 
       is_active: true,
-      remarks: '',
     },
   });
 
-  const fetchAccounts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('*')
-        .order('account_name');
+  /** FETCH ACCOUNTS */
+  const fetchAccounts = () => {
+  // DEMO MODE: do nothing
+  setLoading(false);
+};
 
-      if (error) throw error;
-      setAccounts(data || []);
-    } catch (error) {
-      console.error('Error fetching accounts:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch accounts',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
+  fetchAccounts();
+}, []);
+
+  /** SAVE HANDLER */
+  const onSubmit = (data: any) => {
+  // Assign a temporary ID because real DB not used yet
+  const newAccount = {
+    ...data,
+    id: crypto.randomUUID(),  // unique id for demo
+    created_at: new Date().toISOString(),
+  };
+
+  setAccounts((prev) => [...prev, newAccount]);
+  form.reset();
+
+  toast({
+    title: "Success",
+    description: "Account added (demo mode)",
+  });
+};
+
+
+  /** DELETE HANDLER */
+  const deleteAccount = async (id: string) => {
+    if (!confirm("Delete this account?")) return;
+
+    const { error } = await supabase
+      .from("accounts")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({ title: "Removed", description: "Account deleted" });
     fetchAccounts();
-  }, []);
-
-  const handleNew = () => {
-    setSelectedAccount(null);
-    form.reset({
-      account_name: '',
-      sub_head: 'PERSONALS',
-      balance_status: 'DEBIT',
-      opening_balance: 0,
-      address: '',
-      cell_no: '',
-      limit_status: 'UNLIMITED',
-      limit_amount: 0,
-      is_active: true,
-      remarks: '',
-    });
   };
 
-  const handleRowClick = (account: Account) => {
-    setSelectedAccount(account);
-    form.reset({
-      account_name: account.account_name,
-      sub_head: account.sub_head,
-      balance_status: account.balance_status,
-      opening_balance: Number(account.opening_balance),
-      address: account.address || '',
-      cell_no: account.cell_no || '',
-      limit_status: account.limit_status,
-      limit_amount: Number(account.limit_amount) || 0,
-      is_active: account.is_active,
-      remarks: account.remarks || '',
-    });
-  };
-
-  const onSubmit = async (data: AccountFormData) => {
-    if (!user) return;
-    setSaving(true);
-
-    try {
-      if (selectedAccount) {
-        // Update existing account
-        const { error } = await supabase
-          .from('accounts')
-          .update({
-            account_name: data.account_name,
-            sub_head: data.sub_head,
-            balance_status: data.balance_status,
-            opening_balance: data.opening_balance,
-            address: data.address || null,
-            cell_no: data.cell_no || null,
-            limit_status: data.limit_status,
-            limit_amount: data.limit_amount || 0,
-            is_active: data.is_active,
-            remarks: data.remarks || null,
-          })
-          .eq('id', selectedAccount.id);
-
-        if (error) throw error;
-        toast({ title: 'Success', description: 'Account updated successfully' });
-      } else {
-        // Create new account
-        const { error } = await supabase
-          .from('accounts')
-          .insert({
-            user_id: user.id,
-            account_name: data.account_name,
-            sub_head: data.sub_head,
-            balance_status: data.balance_status,
-            opening_balance: data.opening_balance,
-            address: data.address || null,
-            cell_no: data.cell_no || null,
-            limit_status: data.limit_status,
-            limit_amount: data.limit_amount || 0,
-            is_active: data.is_active,
-            remarks: data.remarks || null,
-          });
-
-        if (error) throw error;
-        toast({ title: 'Success', description: 'Account created successfully' });
-      }
-
-      handleNew();
-      fetchAccounts();
-    } catch (error: any) {
-      console.error('Error saving account:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save account',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!selectedAccount) return;
-    
-    if (!confirm('Are you sure you want to delete this account?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('accounts')
-        .delete()
-        .eq('id', selectedAccount.id);
-
-      if (error) throw error;
-      toast({ title: 'Success', description: 'Account deleted successfully' });
-      handleNew();
-      fetchAccounts();
-    } catch (error: any) {
-      console.error('Error deleting account:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete account',
-        variant: 'destructive',
-      });
-    }
-  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Accounts Entry</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleNew}>
-            <Plus className="h-4 w-4 mr-1" /> New
-          </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={saving}>
-            <Save className="h-4 w-4 mr-1" /> {saving ? 'Saving...' : 'Save'}
-          </Button>
-          {selectedAccount && (
-            <Button variant="destructive" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-1" /> Delete
-            </Button>
-          )}
-        </div>
-      </div>
+    <div className="space-y-6">
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Form */}
-        <Card className="lg:col-span-1 border-sky-600 bg-sky-200">
-          <CardHeader className="py-3">
-            <CardTitle className="text-lg">
-              {selectedAccount ? 'Edit Account' : 'New Account'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 ">
-            <div className="space-y-1">
-              <Label htmlFor="sub_head">A/C Sub Head</Label>
+      {/* FORM SECTION */}
+      <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
+
+        <CardHeader className="py-2 px-4">
+          <CardTitle className="text-xl font-bold">Create Account</CardTitle>
+        </CardHeader>
+
+        <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
+
+          {/* ROW 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+
+            {/* NAME */}
+            <div>
+              <Label>Account Name</Label>
+              <Input
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                placeholder="Enter account name"
+                {...form.register("account_name")}
+              />
+            </div>
+
+            {/* SUB HEAD */}
+            <div>
+              <Label>Sub Head</Label>
               <Select
-                value={form.watch('sub_head')}
-                onValueChange={(value: AccountSubHead) => form.setValue('sub_head', value)}
+                value={form.watch("sub_head")}
+                onValueChange={(v) => form.setValue("sub_head", v)}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select sub head" />
+                <SelectTrigger className="h-9 border-2 border-black rounded-md 
+                focus:border-black focus:ring-0">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {subHeadOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
+                  {subHeadOptions.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="account_name">Account Name</Label>
-              <Input
-                id="account_name"
-                {...form.register('account_name')}
-                placeholder="Enter account name"
-              />
-              {form.formState.errors.account_name && (
-                <p className="text-sm text-destructive">{form.formState.errors.account_name.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label>Balance Status</Label>
-                <Select
-                  value={form.watch('balance_status')}
-                  onValueChange={(value: BalanceStatus) => form.setValue('balance_status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CREDIT">Credit</SelectItem>
-                    <SelectItem value="DEBIT">Debit</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="opening_balance">Amount</Label>
-                <Input
-                  id="opening_balance"
-                  type="number"
-                  step="0.01"
-                  {...form.register('opening_balance')}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="address">Address</Label>
-              <Textarea
-                id="address"
-                {...form.register('address')}
-                placeholder="Enter address"
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="cell_no">Cell No</Label>
-              <Input
-                id="cell_no"
-                {...form.register('cell_no')}
-                placeholder="Enter cell number"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label>Credit Limit Status</Label>
-                <Select
-                  value={form.watch('limit_status')}
-                  onValueChange={(value: LimitStatus) => form.setValue('limit_status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="UNLIMITED">Unlimited</SelectItem>
-                    <SelectItem value="LIMITED">Limited</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="limit_amount">Limit Amount</Label>
-                <Input
-                  id="limit_amount"
-                  type="number"
-                  step="0.01"
-                  {...form.register('limit_amount')}
-                  disabled={form.watch('limit_status') === 'UNLIMITED'}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label>Status</Label>
+            {/* TYPE */}
+            <div>
+              <Label>Type</Label>
               <Select
-                value={form.watch('is_active') ? 'yes' : 'no'}
-                onValueChange={(value) => form.setValue('is_active', value === 'yes')}
+                value={form.watch("balance_status")}
+                onValueChange={(v) => form.setValue("balance_status", v)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 border-2 border-black rounded-md 
+                focus:border-black focus:ring-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="yes">Yes (Active)</SelectItem>
-                  <SelectItem value="no">No (Inactive)</SelectItem>
+                  <SelectItem value="CREDIT">Credit</SelectItem>
+                  <SelectItem value="DEBIT">Debit</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="remarks">Remarks</Label>
-              <Textarea
-                id="remarks"
-                {...form.register('remarks')}
-                placeholder="Enter remarks"
-                rows={2}
+            {/* BALANCE */}
+            <div>
+              <Label>Opening Balance</Label>
+              <Input
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("opening_balance")}
               />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Table */}
-        <Card className="lg:col-span-2 border-sky-600">
-          <CardHeader className="py-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Accounts List</CardTitle>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                Total: {accounts.length} accounts
-              </span>
-              <Button variant="ghost" size="sm" onClick={fetchAccounts}>
-                <RefreshCw className="h-4 w-4" />
+            {/* CELL NO */}
+            <div>
+              <Label>
+                Cell No <span className="text-red-600">*</span>
+              </Label>
+
+              <Input
+                placeholder="0312xxxxxxx"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("cell_no")}
+              />
+
+              {form.formState.errors.cell_no && (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.cell_no.message}
+                </p>
+              )}
+            </div>
+
+          </div>
+
+          {/* ROW 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+
+            
+
+            {/* NTNT NUMBER - 20% */}
+            <div>
+              <Label>NTN Number</Label>
+              <Input
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                placeholder="Enter NTN"
+                {...form.register("ntn_number")}
+              />
+            </div>
+
+            {/* ADDRESS - 65% */}
+            <div className="md:col-span-2">
+              <Label>Address</Label>
+              <Input
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                placeholder="Enter address"
+                {...form.register("address")}
+              />
+            </div>
+
+            {/* SAVE BUTTON - 15% */}
+            <div className="flex items-end">
+              <Button
+                className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                onClick={form.handleSubmit(onSubmit)}
+              >
+                Save Account
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[600px] overflow-auto">
-              <Table>
-                <TableHeader>
+
+          </div>
+
+
+        </CardContent>
+
+      </Card>
+
+
+      {/* TABLE SECTION */}
+      <Card className="w-full border border-gray-300 shadow-sm">
+        <CardHeader className="py-2 px-4"> 
+          <div className="flex justify-between items-center">
+
+            {/* Left side: Title + Search */}
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-xl font-bold">Account List</CardTitle>
+
+              {/* SEARCH BAR (UI Only) */}
+              <Input
+                type="text"
+                placeholder="Search accounts..."
+                className="h-9 w-60 border border-gray-400"
+              />
+            </div>
+
+            {/* Right side: Refresh */}
+            <Button variant="outline" size="sm" onClick={fetchAccounts}>
+              Refresh
+            </Button>
+
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          <div className="max-h-[500px] overflow-y-auto">
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow className="bg-gray-100 border-b border-gray-300">
+                  <TableHead className="border-r w-[220px]">Name</TableHead>
+                  <TableHead className="border-r w-[160px]">Sub Head</TableHead>
+                  <TableHead className="border-r text-center w-[140px]">
+                    Opening (Cr/Dr)
+                  </TableHead>
+                  <TableHead className="border-r text-center w-[160px]">
+                    Current Balance
+                  </TableHead>
+                  <TableHead className="border-r w-[150px]">Cell</TableHead>
+                  <TableHead className="border-r text-center w-[120px]">Status</TableHead>
+                  <TableHead className="text-center w-[80px]">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {loading ? (
                   <TableRow>
-                    <TableHead className="sticky top-0 bg-card">Account Name</TableHead>
-                    <TableHead className="sticky top-0 bg-card">Sub Head</TableHead>
-                    <TableHead className="sticky top-0 bg-card text-right">Credit</TableHead>
-                    <TableHead className="sticky top-0 bg-card text-right">Debit</TableHead>
-                    <TableHead className="sticky top-0 bg-card">Cell No</TableHead>
-                    <TableHead className="sticky top-0 bg-card">Limit</TableHead>
-                    <TableHead className="sticky top-0 bg-card">Status</TableHead>
+                    <TableCell colSpan={7} className="text-center py-6">
+                      Loading...
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
-                        Loading...
-                      </TableCell>
-                    </TableRow>
-                  ) : accounts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        No accounts found. Create your first account.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    accounts.map((account) => (
+                ) : accounts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                      No accounts found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  accounts.map((acc) => {
+                    const opening = Number(acc.opening_balance).toLocaleString();
+                    const type = acc.balance_status === "CREDIT" ? "Cr" : "Dr";
+                    const currentBalance = opening + " " + type;
+
+                    return (
                       <TableRow
-                        key={account.id}
-                        className={`cursor-pointer ${selectedAccount?.id === account.id ? 'bg-muted' : ''}`}
-                        onClick={() => handleRowClick(account)}
+                        key={acc.id}
+                        className="border-b border-gray-200 hover:bg-gray-50 transition"
                       >
-                        <TableCell className="font-medium">{account.account_name}</TableCell>
-                        <TableCell className="text-xs">
-                          {subHeadOptions.find(o => o.value === account.sub_head)?.label}
+                        <TableCell className="border-r truncate max-w-[200px]">
+                          {acc.account_name}
                         </TableCell>
-                        <TableCell className="text-right text-green-600">
-                          {account.balance_status === 'CREDIT' ? Number(account.opening_balance).toLocaleString() : '-'}
+
+                        <TableCell className="border-r truncate max-w-[140px]">
+                          {acc.sub_head}
                         </TableCell>
-                        <TableCell className="text-right text-red-600">
-                          {account.balance_status === 'DEBIT' ? Number(account.opening_balance).toLocaleString() : '-'}
+
+                        <TableCell className="border-r text-center font-semibold text-blue-800">
+                          {opening} {type}
                         </TableCell>
-                        <TableCell>{account.cell_no || '-'}</TableCell>
-                        <TableCell>
-                          {account.limit_status === 'LIMITED' 
-                            ? Number(account.limit_amount).toLocaleString() 
-                            : 'Unlimited'}
+
+                        <TableCell className="border-r text-center font-semibold text-green-700">
+                          {currentBalance}
                         </TableCell>
-                        <TableCell>
-                          <span className={`text-xs px-2 py-1 rounded ${account.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {account.is_active ? 'Active' : 'Inactive'}
+
+                        <TableCell className="border-r truncate max-w-[140px]">
+                          {acc.cell_no || "-"}
+                        </TableCell>
+
+                        <TableCell className="border-r text-center">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              acc.is_active
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {acc.is_active ? "Active" : "Inactive"}
                           </span>
                         </TableCell>
+
+                        <TableCell className="text-center">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteAccount(acc.id)}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+
+
+
     </div>
   );
+
 }
+
