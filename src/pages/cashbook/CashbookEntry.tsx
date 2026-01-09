@@ -1,402 +1,302 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
+  TableHeader,
+  TableHead,
+  TableRow,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Plus, Save, RefreshCw } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
+} from "@/components/ui/table";
+import { Trash2, RefreshCw } from "lucide-react";
 
-type Account = Database['public']['Tables']['accounts']['Row'];
-type CashbookEntry = Database['public']['Tables']['cashbook_entries']['Row'];
-type BalanceStatus = Database['public']['Enums']['balance_status_type'];
 
+// -------- HYBRID DEMO MODE SCHEMA ----------
 const cashbookSchema = z.object({
-  account_id: z.string().min(1, 'Account is required'),
-  payment_detail: z.string().max(200).optional(),
-  pay_status: z.enum(['CREDIT', 'DEBIT']),
-  amount: z.coerce.number().min(0.01, 'Amount must be greater than 0'),
+  account_name: z.string().min(1, "Account is required"),
+  payment_detail: z.string().optional(),
+  pay_status: z.enum(["CREDIT", "DEBIT"]),
+  amount: z.coerce.number().min(1),
   entry_date: z.string(),
-  remarks: z.string().max(500).optional(),
+  remarks: z.string().optional(),
 });
 
-type CashbookFormData = z.infer<typeof cashbookSchema>;
 
 export default function CashbookEntry() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [entries, setEntries] = useState<(CashbookEntry & { accounts: Account | null })[]>([]);
-  const [selectedAccountBalance, setSelectedAccountBalance] = useState<number>(0);
-  const [cashInHand, setCashInHand] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { user } = useAuth();
-  const { toast } = useToast();
 
-  const form = useForm<CashbookFormData>({
+  // STATIC ACCOUNTS FOR DEMO
+  const demoAccounts = [
+    "AL-HAMD TRADERS",
+    "BISMILLAH LOGISTICS",
+    "USMAN EXPORTS",
+    "AHMED CARGO SERVICES",
+  ];
+
+  const [entries, setEntries] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+
+  const form = useForm({
     resolver: zodResolver(cashbookSchema),
     defaultValues: {
-      account_id: '',
-      payment_detail: '',
-      pay_status: 'DEBIT',
+      account_name: "",
+      payment_detail: "",
+      pay_status: "DEBIT",
       amount: 0,
-      entry_date: format(new Date(), 'yyyy-MM-dd'),
-      remarks: '',
+      entry_date: new Date().toISOString().split("T")[0],
+      remarks: "",
     },
   });
 
-  const fetchAccounts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('is_active', true)
-        .order('account_name');
+  // CALCULATE CASH IN HAND
+  const cashInHand = entries.reduce((total, e) => {
+    return e.pay_status === "CREDIT"
+      ? total + Number(e.amount)
+      : total - Number(e.amount);
+  }, 0);
 
-      if (error) throw error;
-      setAccounts(data || []);
-    } catch (error) {
-      console.error('Error fetching accounts:', error);
-    }
-  };
 
-  const fetchEntries = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cashbook_entries')
-        .select('*, accounts(*)')
-        .eq('is_deleted', false)
-        .order('entry_date', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(100);
+  // HANDLE SAVE ENTRY (LOCAL ONLY)
+  const saveEntry = (data: any) => {
+    const newEntry = {
+      id: Date.now(),
+      ...data,
+    };
 
-      if (error) throw error;
-      setEntries(data || []);
-
-      // Calculate cash in hand
-      let total = 0;
-      (data || []).forEach((entry) => {
-        if (entry.pay_status === 'CREDIT') {
-          total += Number(entry.amount);
-        } else {
-          total -= Number(entry.amount);
-        }
-      });
-      setCashInHand(total);
-    } catch (error) {
-      console.error('Error fetching entries:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAccounts();
-    fetchEntries();
-  }, []);
-
-  // Calculate account balance when account is selected
-  useEffect(() => {
-    const accountId = form.watch('account_id');
-    if (accountId) {
-      calculateAccountBalance(accountId);
-    }
-  }, [form.watch('account_id')]);
-
-  const calculateAccountBalance = async (accountId: string) => {
-    try {
-      // Get account opening balance
-      const account = accounts.find(a => a.id === accountId);
-      if (!account) return;
-
-      let balance = account.balance_status === 'CREDIT' 
-        ? Number(account.opening_balance) 
-        : -Number(account.opening_balance);
-
-      // Get all ledger entries for this account
-      const { data: ledgerData } = await supabase
-        .from('ledger_entries')
-        .select('credit_amount, debit_amount')
-        .eq('account_id', accountId)
-        .eq('is_deleted', false);
-
-      if (ledgerData) {
-        ledgerData.forEach((entry) => {
-          balance += Number(entry.credit_amount) - Number(entry.debit_amount);
-        });
-      }
-
-      setSelectedAccountBalance(balance);
-    } catch (error) {
-      console.error('Error calculating balance:', error);
-    }
-  };
-
-  const handleNew = () => {
+    setEntries([newEntry, ...entries]);
     form.reset({
-      account_id: '',
-      payment_detail: '',
-      pay_status: 'DEBIT',
+      account_name: "",
+      payment_detail: "",
+      pay_status: "DEBIT",
       amount: 0,
-      entry_date: format(new Date(), 'yyyy-MM-dd'),
-      remarks: '',
+      entry_date: new Date().toISOString().split("T")[0],
+      remarks: "",
     });
-    setSelectedAccountBalance(0);
   };
 
-  const onSubmit = async (data: CashbookFormData) => {
-    if (!user) return;
-    setSaving(true);
 
-    try {
-      // Insert cashbook entry
-      const { error: cashbookError } = await supabase
-        .from('cashbook_entries')
-        .insert({
-          user_id: user.id,
-          account_id: data.account_id,
-          entry_date: data.entry_date,
-          payment_detail: data.payment_detail || null,
-          pay_status: data.pay_status,
-          amount: data.amount,
-          remarks: data.remarks || null,
-        });
-
-      if (cashbookError) throw cashbookError;
-
-      // Also insert ledger entry
-      const { error: ledgerError } = await supabase
-        .from('ledger_entries')
-        .insert({
-          user_id: user.id,
-          account_id: data.account_id,
-          entry_date: data.entry_date,
-          detail: data.payment_detail || 'Cashbook Entry',
-          reference_type: 'CASHBOOK',
-          credit_amount: data.pay_status === 'CREDIT' ? data.amount : 0,
-          debit_amount: data.pay_status === 'DEBIT' ? data.amount : 0,
-          remarks: data.remarks || null,
-        });
-
-      if (ledgerError) throw ledgerError;
-
-      toast({ title: 'Success', description: 'Entry saved successfully' });
-      handleNew();
-      fetchEntries();
-    } catch (error: any) {
-      console.error('Error saving entry:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save entry',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
+  // DELETE ROW LOCALLY
+  const deleteEntry = (id: number) => {
+    if (!confirm("Remove this entry?")) return;
+    setEntries(entries.filter((e) => e.id !== id));
   };
 
-  const selectedAccount = accounts.find(a => a.id === form.watch('account_id'));
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Daily Cashbook Entry</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleNew}>
-            <Plus className="h-4 w-4 mr-1" /> New
-          </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={saving}>
-            <Save className="h-4 w-4 mr-1" /> {saving ? 'Saving...' : 'Save'}
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6">
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Form */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="py-3">
-            <CardTitle className="text-lg">New Entry</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-1">
-              <Label htmlFor="account_id">Account Name</Label>
+
+      {/* FORM SECTION */}
+      <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
+
+        <CardHeader className="py-2 px-4">
+          <CardTitle className="text-xl font-bold">Cashbook Entry</CardTitle>
+        </CardHeader>
+
+        <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
+
+          {/* ROW 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+
+            {/* ACCOUNT NAME */}
+            <div>
+              <Label>Account Name</Label>
               <Select
-                value={form.watch('account_id')}
-                onValueChange={(value) => form.setValue('account_id', value)}
+                value={form.watch("account_name")}
+                onValueChange={(v) => form.setValue("account_name", v)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:ring-0">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.account_name}
+                  {demoAccounts.map((acc) => (
+                    <SelectItem key={acc} value={acc}>
+                      {acc}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {form.formState.errors.account_id && (
-                <p className="text-sm text-destructive">{form.formState.errors.account_id.message}</p>
-              )}
             </div>
 
-            {selectedAccount && (
-              <div className="p-2 bg-muted rounded-md text-sm">
-                <div className="flex justify-between">
-                  <span>Balance:</span>
-                  <span className={selectedAccountBalance >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    Rs. {Math.abs(selectedAccountBalance).toLocaleString()}
-                    {selectedAccountBalance >= 0 ? ' Cr' : ' Dr'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Limit:</span>
-                  <span>
-                    {selectedAccount.limit_status === 'LIMITED' 
-                      ? `Rs. ${Number(selectedAccount.limit_amount).toLocaleString()}`
-                      : 'Unlimited'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <Label htmlFor="payment_detail">Payment Detail</Label>
+            {/* PAYMENT DETAIL */}
+            <div>
+              <Label>Payment Detail</Label>
               <Input
-                id="payment_detail"
-                {...form.register('payment_detail')}
-                placeholder="Invoice/GD reference"
+                className="h-9 border-2 border-black focus:outline-none"
+                placeholder="Invoice or GD No."
+                {...form.register("payment_detail")}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label>Pay Status</Label>
-                <Select
-                  value={form.watch('pay_status')}
-                  onValueChange={(value: BalanceStatus) => form.setValue('pay_status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CREDIT">Credit (In)</SelectItem>
-                    <SelectItem value="DEBIT">Debit (Out)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="amount">Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  {...form.register('amount')}
-                />
-                {form.formState.errors.amount && (
-                  <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>
-                )}
-              </div>
+            {/* PAY STATUS */}
+            <div>
+              <Label>Type</Label>
+              <Select
+                value={form.watch("pay_status")}
+                onValueChange={(v) => form.setValue("pay_status", v)}
+              >
+                <SelectTrigger className="h-9 border-2 border-black focus:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CREDIT">Credit (In)</SelectItem>
+                  <SelectItem value="DEBIT">Debit (Out)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="entry_date">Date</Label>
+            {/* AMOUNT */}
+            <div>
+              <Label>Amount</Label>
               <Input
-                id="entry_date"
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none"
+                {...form.register("amount")}
+              />
+            </div>
+
+            {/* DATE */}
+            <div>
+              <Label>Date</Label>
+              <Input
                 type="date"
-                {...form.register('entry_date')}
+                className="h-9 border-2 border-black focus:outline-none"
+                {...form.register("entry_date")}
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Table */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="py-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Recent Entries</CardTitle>
-            <Button variant="ghost" size="sm" onClick={fetchEntries}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[500px] overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky top-0 bg-card">Date</TableHead>
-                    <TableHead className="sticky top-0 bg-card">Account Name</TableHead>
-                    <TableHead className="sticky top-0 bg-card">Detail</TableHead>
-                    <TableHead className="sticky top-0 bg-card text-right">Credit</TableHead>
-                    <TableHead className="sticky top-0 bg-card text-right">Debit</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
-                        Loading...
-                      </TableCell>
-                    </TableRow>
-                  ) : entries.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        No entries found.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    entries.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell>{format(new Date(entry.entry_date), 'dd/MM/yyyy')}</TableCell>
-                        <TableCell className="font-medium">
-                          {entry.accounts?.account_name || '-'}
-                        </TableCell>
-                        <TableCell>{entry.payment_detail || '-'}</TableCell>
-                        <TableCell className="text-right text-green-600">
-                          {entry.pay_status === 'CREDIT' ? Number(entry.amount).toLocaleString() : '-'}
-                        </TableCell>
-                        <TableCell className="text-right text-red-600">
-                          {entry.pay_status === 'DEBIT' ? Number(entry.amount).toLocaleString() : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-
-          {/* Footer - Cash In Hand */}
-          <div className="border-t p-4 bg-muted/50">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold">CASH IN HAND:</span>
-              <span className={`text-xl font-bold ${cashInHand >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                Rs. {Math.abs(cashInHand).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                {cashInHand < 0 && ' (Deficit)'}
-              </span>
             </div>
           </div>
-        </Card>
-      </div>
+
+
+          {/* ROW 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+            {/* REMARKS */}
+            <div className="md:col-span-2">
+              <Label>Remarks</Label>
+              <Input
+                className="h-9 border-2 border-black focus:outline-none"
+                {...form.register("remarks")}
+                placeholder="Optional"
+              />
+            </div>
+
+            {/* SAVE BUTTON */}
+            <div className="flex items-end">
+              <Button
+                className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                onClick={form.handleSubmit(saveEntry)}
+              >
+                Save Entry
+              </Button>
+            </div>
+          </div>
+
+        </CardContent>
+
+      </Card>
+
+
+
+      {/* TABLE SECTION */}
+      <Card className="w-full border border-gray-300 shadow-sm">
+
+        <CardHeader className="py-2 px-4 flex justify-between items-center">
+
+          <div className="flex items-center gap-4">
+            <CardTitle className="text-xl font-bold">Records</CardTitle>
+
+            <Input
+              placeholder="Search..."
+              className="h-9 w-60 border border-gray-400"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <Button variant="outline" size="sm" onClick={() => setSearch("")}>
+            <RefreshCw size={16} />
+          </Button>
+
+        </CardHeader>
+
+
+        <CardContent className="p-0">
+          <div className="max-h-[500px] overflow-y-auto">
+            <Table className="w-full text-sm">
+
+              <TableHeader>
+                <TableRow className="bg-gray-100 border-b border-gray-300">
+                  <TableHead className="w-[150px] border-r">Date</TableHead>
+                  <TableHead className="w-[220px] border-r">Account</TableHead>
+                  <TableHead className="w-[200px] border-r">Detail</TableHead>
+                  <TableHead className="text-right w-[130px] border-r">Credit</TableHead>
+                  <TableHead className="text-right w-[130px] border-r">Debit</TableHead>
+                  <TableHead className="text-center w-[80px]">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+
+
+              <TableBody>
+                {entries
+                  .filter((e) =>
+                    e.account_name.toLowerCase().includes(search.toLowerCase())
+                  )
+                  .map((entry) => (
+                    <TableRow
+                      key={entry.id}
+                      className="border-b border-gray-200 hover:bg-gray-50"
+                    >
+                      <TableCell>{entry.entry_date}</TableCell>
+                      <TableCell className="truncate">{entry.account_name}</TableCell>
+                      <TableCell className="truncate">
+                        {entry.payment_detail || "-"}
+                      </TableCell>
+                      <TableCell className="text-right text-green-600">
+                        {entry.pay_status === "CREDIT" ? entry.amount : "-"}
+                      </TableCell>
+                      <TableCell className="text-right text-red-600">
+                        {entry.pay_status === "DEBIT" ? entry.amount : "-"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteEntry(entry.id)}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+
+            </Table>
+          </div>
+        </CardContent>
+
+
+        {/* CASH IN HAND FOOTER */}
+        <div className="border-t p-4 bg-gray-100 flex justify-between font-bold text-lg">
+          <span>CASH IN HAND:</span>
+          <span className={cashInHand >= 0 ? "text-green-600" : "text-red-600"}>
+            {cashInHand}
+          </span>
+        </div>
+
+      </Card>
+
     </div>
   );
 }
