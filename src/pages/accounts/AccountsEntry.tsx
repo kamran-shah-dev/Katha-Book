@@ -49,7 +49,10 @@ const accountSchema = z.object({
   opening_balance: z.coerce.number().min(0),
   ntn_number: z.string().max(50).optional(),
   address: z.string().max(200).optional(),
-  cell_no: z.string().max(20).optional(),
+  cell_no: z
+  .string()
+  .min(11, "Cell number must be 11 digits")
+  .max(11, "Cell number cannot be more than 11 digits"),
   is_active: z.boolean(),
 });
 
@@ -138,42 +141,62 @@ export default function AccountsEntry() {
 
             {/* NAME */}
             <div>
-              <Label>Account Name</Label>
+              <Label>
+                Account Name <span className="text-red-600">*</span>
+              </Label>
               <Input
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Enter account name"
-                {...form.register("account_name")}
+                {...form.register("account_name", { required: "Account name is required" })}
               />
+
+              {form.formState.errors.account_name && (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.account_name.message}
+                </p>
+              )}
             </div>
+
 
             {/* SUB HEAD */}
             <div>
-              <Label>Sub Head</Label>
+              <Label>
+                Sub Head <span className="text-red-600">*</span>
+              </Label>
+
               <Select
                 value={form.watch("sub_head")}
-                onValueChange={(v) => form.setValue("sub_head", v)}
+                onValueChange={(v) => form.setValue("sub_head", v, { shouldValidate: true })}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md 
-                focus:border-black focus:ring-0">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:border-black focus:ring-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {subHeadOptions.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
+              {form.formState.errors.sub_head && (
+                <p className="text-sm text-red-600">Sub head is required</p>
+              )}
             </div>
+
 
             {/* TYPE */}
             <div>
-              <Label>Type</Label>
+              <Label>
+                Type <span className="text-red-600">*</span>
+              </Label>
+
               <Select
                 value={form.watch("balance_status")}
-                onValueChange={(v) => form.setValue("balance_status", v)}
+                onValueChange={(v) => form.setValue("balance_status", v, { shouldValidate: true })}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md 
-                focus:border-black focus:ring-0">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:border-black focus:ring-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -181,17 +204,32 @@ export default function AccountsEntry() {
                   <SelectItem value="DEBIT">Debit</SelectItem>
                 </SelectContent>
               </Select>
+
+              {form.formState.errors.balance_status && (
+                <p className="text-sm text-red-600">Type is required</p>
+              )}
             </div>
+
 
             {/* BALANCE */}
             <div>
-              <Label>Opening Balance</Label>
+              <Label>
+                Opening Balance <span className="text-red-600">*</span>
+              </Label>
+
               <Input
                 type="number"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("opening_balance")}
+                {...form.register("opening_balance", { required: "Opening balance is required" })}
               />
+
+              {form.formState.errors.opening_balance && (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.opening_balance.message}
+                </p>
+              )}
             </div>
+
 
             {/* CELL NO */}
             <div>
@@ -201,9 +239,14 @@ export default function AccountsEntry() {
 
               <Input
                 placeholder="0312xxxxxxx"
+                maxLength={11}
+                onInput={(e) => {
+                  e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "").slice(0, 11);
+                }}
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("cell_no")}
               />
+
 
               {form.formState.errors.cell_no && (
                 <p className="text-sm text-red-600">
@@ -211,6 +254,7 @@ export default function AccountsEntry() {
                 </p>
               )}
             </div>
+
 
           </div>
 
@@ -221,7 +265,7 @@ export default function AccountsEntry() {
 
             {/* NTNT NUMBER - 20% */}
             <div>
-              <Label>NTN Number</Label>
+              <Label>NTN Number (Optional)</Label>
               <Input
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Enter NTN"
@@ -317,7 +361,7 @@ export default function AccountsEntry() {
                 ) : (
                   accounts.map((acc) => {
                     const opening = Number(acc.opening_balance).toLocaleString();
-                    const type = acc.balance_status === "CREDIT" ? "Cr" : "Dr";
+                    const type = acc.balance_status === "CREDIT" ? "PKR" : "PKR";
                     const currentBalance = opening + " " + type;
 
                     return (

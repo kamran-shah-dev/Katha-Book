@@ -107,7 +107,7 @@ export default function ExportEntryDemo() {
       {/* FORM SECTION */}
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
         <CardHeader className="py-2 px-4">
-          <CardTitle className="text-xl font-bold">Export Entry (Demo)</CardTitle>
+          <CardTitle className="text-xl font-bold">Export Entry</CardTitle>
         </CardHeader>
 
         <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
