@@ -105,10 +105,10 @@ export default function CashbookEntry() {
         <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
 
           {/* ROW 1 */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
 
             {/* ACCOUNT NAME */}
-            <div>
+            <div className="md:col-span-1">
               <Label>Account Name</Label>
               <Select
                 value={form.watch("account_name")}
@@ -128,7 +128,7 @@ export default function CashbookEntry() {
             </div>
 
             {/* PAYMENT DETAIL */}
-            <div>
+            <div className="md:col-span-1">
               <Label>Payment Detail</Label>
               <Input
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -137,8 +137,8 @@ export default function CashbookEntry() {
               />
             </div>
 
-            {/* PAY STATUS */}
-            <div>
+            {/* TYPE */}
+            <div className="md:col-span-1">
               <Label>Type</Label>
               <Select
                 value={form.watch("pay_status")}
@@ -155,7 +155,7 @@ export default function CashbookEntry() {
             </div>
 
             {/* AMOUNT */}
-            <div>
+            <div className="md:col-span-1">
               <Label>Amount</Label>
               <Input
                 type="number"
@@ -164,8 +164,8 @@ export default function CashbookEntry() {
               />
             </div>
 
-            {/* DATE */}
-            <div>
+            {/* DATE - Smaller width */}
+            <div className="md:col-span-1 w-[140px]">
               <Label>Date</Label>
               <Input
                 type="date"
@@ -173,23 +173,9 @@ export default function CashbookEntry() {
                 {...form.register("entry_date")}
               />
             </div>
-          </div>
 
-          {/* ROW 2 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-            {/* REMARKS */}
-            <div className="md:col-span-2">
-              <Label>Remarks</Label>
-              <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("remarks")}
-                placeholder="Optional"
-              />
-            </div>
-
-            {/* SAVE BUTTON */}
-            <div className="flex items-end">
+            {/* SAVE BUTTON now in SAME ROW */}
+            <div className="flex items-end md:col-span-1">
               <Button
                 className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
                 onClick={form.handleSubmit(saveEntry)}
@@ -197,13 +183,11 @@ export default function CashbookEntry() {
                 Save Entry
               </Button>
             </div>
+
           </div>
 
         </CardContent>
       </Card>
-
-
-
 
       {/* TABLE SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">
