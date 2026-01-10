@@ -28,7 +28,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Dashboard", icon: LayoutDashboard, path: "/" },
     { name: "Accounts", icon: Users, path: "/accounts" },
     { name: "Cashbook", icon: BookOpen, path: "/cashbook" },
-    { name: "Goods Received", icon: Truck, path: "/goods-received" },
+    { name: "Import", icon: Truck, path: "/goods-received" },
     { name: "Export", icon: FolderSearch, path: "/export" },
     { name: "Invoice", icon: FileText, path: "/invoice" },
 

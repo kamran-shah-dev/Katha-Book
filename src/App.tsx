@@ -10,7 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AccountsEntry from "./pages/accounts/AccountsEntry";
 import CashbookEntry from "./pages/cashbook/CashbookEntry";
-import GoodsReceivedEntry from "./pages/goods-received/GoodsReceivedEntry";
+import GoodsReceivedEntry from "./pages/import/ImportEntry";
 import ExportEntry from "./pages/export/ExportEntry";
 import InvoiceEntry from "./pages/invoice/InvoiceEntry";
 import ProductsPage from "./pages/utility/ProductsPage";
