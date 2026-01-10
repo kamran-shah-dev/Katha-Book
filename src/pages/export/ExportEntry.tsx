@@ -56,6 +56,7 @@ export default function ExportEntryDemo() {
   const weight = form.watch("weight_per_bag");
   const rate = form.watch("rate_per_kg");
 
+
   const totalWeight = bags * weight;
   const amount = totalWeight * rate;
 
@@ -94,6 +95,32 @@ export default function ExportEntryDemo() {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
+const [invoiceNo, setInvoiceNo] = useState("HAH001");
+
+const generateNextInvoiceNo = () => {
+  setInvoiceNo((prev) => {
+    const prefix = "HAH";
+    const num = parseInt(prev.replace(prefix, ""), 10) + 1;
+    return `${prefix}${String(num).padStart(3, "0")}`;
+  });
+};
+
+const handleNew = () => {
+  generateNextInvoiceNo();
+
+  form.reset({
+    account: "",
+    product: "",
+    bags_qty: 0,
+    weight_per_bag: 0,
+    rate_per_kg: 0,
+    vehicle_numbers: "",
+    gd_no: "",
+    entry_date: format(new Date(), "yyyy-MM-dd"),
+  });
+};
+
+
   /** FILTERED LIST */
   const filtered = entries.filter((e) =>
     e.account.toLowerCase().includes(search.toLowerCase()) ||
@@ -118,11 +145,13 @@ export default function ExportEntryDemo() {
             <div>
               <Label>Invoice Number</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                placeholder="Enter account"
-                {...form.register("account")}
+                value={invoiceNo}
+                readOnly
+                className="h-9 border-2 border-black bg-gray-200 text-gray-700 font-semibold cursor-not-allowed 
+                focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
+
 
             <div>
               <Label>Account</Label>
