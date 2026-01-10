@@ -113,7 +113,16 @@ export default function ExportEntryDemo() {
         <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
 
           {/* ROW 1 */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+
+            <div>
+              <Label>Invoice Number</Label>
+              <Input
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                placeholder="Enter account"
+                {...form.register("account")}
+              />
+            </div>
 
             <div>
               <Label>Account</Label>
