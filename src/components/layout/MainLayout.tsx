@@ -30,7 +30,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Cashbook", icon: BookOpen, path: "/cashbook" },
     { name: "Import", icon: Truck, path: "/goods-received" },
     { name: "Export", icon: FolderSearch, path: "/export" },
-    { name: "Invoice", icon: FileText, path: "/invoice" },
 
     {
       name: "Reports",
