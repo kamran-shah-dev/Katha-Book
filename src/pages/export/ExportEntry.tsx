@@ -118,7 +118,7 @@ export default function ExportEntryDemo() {
             <div>
               <Label>Account</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Enter account"
                 {...form.register("account")}
               />
@@ -127,7 +127,7 @@ export default function ExportEntryDemo() {
             <div>
               <Label>Product</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Enter product"
                 {...form.register("product")}
               />
@@ -137,7 +137,7 @@ export default function ExportEntryDemo() {
               <Label>Bags Qty</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("bags_qty")}
               />
             </div>
@@ -147,7 +147,7 @@ export default function ExportEntryDemo() {
               <Input
                 type="number"
                 step="0.001"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("weight_per_bag")}
               />
             </div>
@@ -157,10 +157,11 @@ export default function ExportEntryDemo() {
               <Input
                 type="number"
                 step="0.01"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("rate_per_kg")}
               />
             </div>
+
           </div>
 
           {/* ROW 2 */}
@@ -170,19 +171,19 @@ export default function ExportEntryDemo() {
             <div className="md:col-span-2">
               <Label>Vehicle Numbers</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="ABC-123, XYZ-555"
                 {...form.register("vehicle_numbers")}
               />
             </div>
 
-            {/* GD No + Save Button (15%) */}
+            {/* GD No + Save Button */}
             <div className="flex gap-3">
 
               <div className="w-1/2">
                 <Label>GD No</Label>
                 <Input
-                  className="h-9 border-2 border-black focus:outline-none"
+                  className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   {...form.register("gd_no")}
                 />
               </div>
@@ -214,6 +215,7 @@ export default function ExportEntryDemo() {
 
         </CardContent>
       </Card>
+
 
       {/* TABLE SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">

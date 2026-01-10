@@ -96,11 +96,8 @@ export default function CashbookEntry() {
 
   return (
     <div className="space-y-6">
-
-
       {/* FORM SECTION */}
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
-
         <CardHeader className="py-2 px-4">
           <CardTitle className="text-xl font-bold">Cashbook Entry</CardTitle>
         </CardHeader>
@@ -117,7 +114,7 @@ export default function CashbookEntry() {
                 value={form.watch("account_name")}
                 onValueChange={(v) => form.setValue("account_name", v)}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:ring-0">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
@@ -134,7 +131,7 @@ export default function CashbookEntry() {
             <div>
               <Label>Payment Detail</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Invoice or GD No."
                 {...form.register("payment_detail")}
               />
@@ -147,7 +144,7 @@ export default function CashbookEntry() {
                 value={form.watch("pay_status")}
                 onValueChange={(v) => form.setValue("pay_status", v)}
               >
-                <SelectTrigger className="h-9 border-2 border-black focus:ring-0">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -162,7 +159,7 @@ export default function CashbookEntry() {
               <Label>Amount</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("amount")}
               />
             </div>
@@ -172,12 +169,11 @@ export default function CashbookEntry() {
               <Label>Date</Label>
               <Input
                 type="date"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("entry_date")}
               />
             </div>
           </div>
-
 
           {/* ROW 2 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -186,7 +182,7 @@ export default function CashbookEntry() {
             <div className="md:col-span-2">
               <Label>Remarks</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("remarks")}
                 placeholder="Optional"
               />
@@ -204,31 +200,34 @@ export default function CashbookEntry() {
           </div>
 
         </CardContent>
-
       </Card>
+
 
 
 
       {/* TABLE SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">
 
-        <CardHeader className="py-2 px-4 flex justify-between items-center">
+        <CardHeader className="py-2 px-4">
+          <div className="flex justify-between items-center">
 
-          <div className="flex items-center gap-4">
-            <CardTitle className="text-xl font-bold">Records</CardTitle>
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-xl font-bold">Cashbook Entries</CardTitle>
 
-            <Input
-              placeholder="Search..."
-              className="h-9 w-60 border border-gray-400"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+              <Input
+                type="text"
+                placeholder="Search..."
+                className="h-9 w-60 border border-gray-400"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            <Button variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+
           </div>
-
-          <Button variant="outline" size="sm" onClick={() => setSearch("")}>
-            <RefreshCw size={16} />
-          </Button>
-
         </CardHeader>
 
 

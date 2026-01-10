@@ -120,15 +120,15 @@ export default function GoodsReceivedDemo() {
           <CardTitle className="text-xl font-bold">Goods Received Entry (Demo)</CardTitle>
         </CardHeader>
 
-        <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
+        <CardContent className="bg-gray-300 py-4 px-4 space-y-4">
 
-          {/* ROW 1 */}
+          {/* ROW 1 – 5 COLUMNS */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
 
             <div>
               <Label>Shipment</Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("shipment")}
                 placeholder="TAFTAN / NLC"
               />
@@ -137,7 +137,7 @@ export default function GoodsReceivedDemo() {
             <div>
               <Label>Account</Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("account")}
                 placeholder="Account Name"
               />
@@ -146,7 +146,7 @@ export default function GoodsReceivedDemo() {
             <div>
               <Label>Product</Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("product")}
                 placeholder="Product Name"
               />
@@ -155,7 +155,7 @@ export default function GoodsReceivedDemo() {
             <div>
               <Label>GD No</Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("gd_no")}
                 placeholder="Enter GD No"
               />
@@ -163,54 +163,87 @@ export default function GoodsReceivedDemo() {
 
             <div>
               <Label>Date</Label>
-              <Input type="date" className="h-9 border-2 border-black" {...form.register("entry_date")} />
+              <Input
+                type="date"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("entry_date")}
+              />
             </div>
 
           </div>
 
-          {/* ROW 2 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* ROW 2 – EXACTLY 4 COLUMNS */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
 
-            <div className="md:col-span-2 grid grid-cols-3 gap-3">
-
-              <div>
-                <Label>Custom Tax</Label>
-                <Input type="number" className="h-9 border-2 border-black" {...form.register("custom_tax")} />
-              </div>
-
-              <div>
-                <Label>Challan Diff</Label>
-                <Input type="number" className="h-9 border-2 border-black" {...form.register("challan_difference")} />
-              </div>
-
-              <div>
-                <Label>Port Exp</Label>
-                <Input type="number" className="h-9 border-2 border-black" {...form.register("port_expenses")} />
-              </div>
-
-              <div>
-                <Label>Commission</Label>
-                <Input type="number" className="h-9 border-2 border-black" {...form.register("commission")} />
-              </div>
-
-              <div>
-                <Label>NLC Diff</Label>
-                <Input type="number" className="h-9 border-2 border-black" {...form.register("nlc_difference")} />
-              </div>
-
-              <div>
-                <Label>Taftan Diff</Label>
-                <Input type="number" className="h-9 border-2 border-black" {...form.register("taftan_difference")} />
-              </div>
-
-              <div>
-                <Label>Expense Amount</Label>
-                <Input type="number" className="h-9 border-2 border-black" {...form.register("expense_amount")} />
-              </div>
-
+            <div>
+              <Label>Custom Tax</Label>
+              <Input
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("custom_tax")}
+              />
             </div>
 
-            {/* Save Button */}
+            <div>
+              <Label>Challan Diff</Label>
+              <Input
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("challan_difference")}
+              />
+            </div>
+
+            <div>
+              <Label>Port Exp</Label>
+              <Input
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("port_expenses")}
+              />
+            </div>
+
+            <div>
+              <Label>Commission</Label>
+              <Input
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("commission")}
+              />
+            </div>
+
+          </div>
+
+          {/* ROW 3 – NLC, TAFTAN, EXP AMOUNT + SAVE BUTTON */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+
+            <div>
+              <Label>NLC Diff</Label>
+              <Input
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("nlc_difference")}
+              />
+            </div>
+
+            <div>
+              <Label>Taftan Diff</Label>
+              <Input
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("taftan_difference")}
+              />
+            </div>
+
+            <div>
+              <Label>Expense Amount</Label>
+              <Input
+                type="number"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("expense_amount")}
+              />
+            </div>
+
+            {/* SAVE BUTTON */}
             <div className="flex items-end">
               <Button
                 className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
@@ -232,6 +265,7 @@ export default function GoodsReceivedDemo() {
 
         </CardContent>
       </Card>
+
 
       {/* TABLE SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">
