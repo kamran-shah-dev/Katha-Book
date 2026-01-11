@@ -170,7 +170,7 @@ export default function CashbookEntry() {
             <div className="md:col-span-1">
               <Label>Payment Detail</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-offset-0 focus-visible:ring-0"
                 placeholder="Invoice or GD No."
                 {...form.register("payment_detail")}
               />
@@ -198,7 +198,7 @@ export default function CashbookEntry() {
               <Label>Amount</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-offset-0 focus-visible:ring-0"
                 {...form.register("amount")}
               />
             </div>
@@ -208,7 +208,7 @@ export default function CashbookEntry() {
               <Label>Date</Label>
               <Input
                 type="date"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-offset-0 focus-visible:ring-0"
                 {...form.register("entry_date")}
               />
             </div>
