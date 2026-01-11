@@ -21,10 +21,9 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { Trash2, RefreshCw } from "lucide-react";
+import { Trash2, RefreshCw, Pencil } from "lucide-react";
 
-
-// -------- HYBRID DEMO MODE SCHEMA ----------
+// -------- SCHEMA ----------
 const cashbookSchema = z.object({
   account_name: z.string().min(1, "Account is required"),
   payment_detail: z.string().optional(),
@@ -36,8 +35,6 @@ const cashbookSchema = z.object({
 
 
 export default function CashbookEntry() {
-
-  // STATIC ACCOUNTS FOR DEMO
   const demoAccounts = [
     "AL-HAMD TRADERS",
     "BISMILLAH LOGISTICS",
@@ -47,6 +44,7 @@ export default function CashbookEntry() {
 
   const [entries, setEntries] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const form = useForm({
     resolver: zodResolver(cashbookSchema),
@@ -60,7 +58,6 @@ export default function CashbookEntry() {
     },
   });
 
-  // CALCULATE CASH IN HAND
   const cashInHand = entries.reduce((total, e) => {
     return e.pay_status === "CREDIT"
       ? total + Number(e.amount)
@@ -68,14 +65,20 @@ export default function CashbookEntry() {
   }, 0);
 
 
-  // HANDLE SAVE ENTRY (LOCAL ONLY)
+  // SAVE NEW ENTRY
   const saveEntry = (data: any) => {
+    if (editingId !== null) {
+      updateEntry(editingId, data);
+      return;
+    }
+
     const newEntry = {
       id: Date.now(),
       ...data,
     };
 
     setEntries([newEntry, ...entries]);
+
     form.reset({
       account_name: "",
       payment_detail: "",
@@ -87,19 +90,55 @@ export default function CashbookEntry() {
   };
 
 
-  // DELETE ROW LOCALLY
+  // DELETE ENTRY
   const deleteEntry = (id: number) => {
     if (!confirm("Remove this entry?")) return;
     setEntries(entries.filter((e) => e.id !== id));
   };
 
 
+  // LOAD ENTRY INTO FORM FOR EDITING
+  const handleEdit = (entry: any) => {
+    setEditingId(entry.id);
+
+    form.setValue("account_name", entry.account_name);
+    form.setValue("payment_detail", entry.payment_detail || "");
+    form.setValue("pay_status", entry.pay_status);
+    form.setValue("amount", entry.amount);
+    form.setValue("entry_date", entry.entry_date);
+    form.setValue("remarks", entry.remarks || "");
+  };
+
+
+  // UPDATE EXISTING ENTRY
+  const updateEntry = (id: number, data: any) => {
+    const updated = entries.map((e) =>
+      e.id === id ? { ...e, ...data } : e
+    );
+
+    setEntries(updated);
+    setEditingId(null);
+
+    form.reset({
+      account_name: "",
+      payment_detail: "",
+      pay_status: "DEBIT",
+      amount: 0,
+      entry_date: new Date().toISOString().split("T")[0],
+      remarks: "",
+    });
+  };
+
+
   return (
     <div className="space-y-6">
+
       {/* FORM SECTION */}
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
         <CardHeader className="py-2 px-4">
-          <CardTitle className="text-xl font-bold">Cashbook Entry</CardTitle>
+          <CardTitle className="text-xl font-bold">
+            Cashbook Entry {editingId ? "(Editing)" : ""}
+          </CardTitle>
         </CardHeader>
 
         <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
@@ -114,7 +153,7 @@ export default function CashbookEntry() {
                 value={form.watch("account_name")}
                 onValueChange={(v) => form.setValue("account_name", v)}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
@@ -131,7 +170,7 @@ export default function CashbookEntry() {
             <div className="md:col-span-1">
               <Label>Payment Detail</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 placeholder="Invoice or GD No."
                 {...form.register("payment_detail")}
               />
@@ -144,7 +183,7 @@ export default function CashbookEntry() {
                 value={form.watch("pay_status")}
                 onValueChange={(v) => form.setValue("pay_status", v)}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -159,35 +198,35 @@ export default function CashbookEntry() {
               <Label>Amount</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 {...form.register("amount")}
               />
             </div>
 
-            {/* DATE - Smaller width */}
+            {/* DATE */}
             <div className="md:col-span-1 w-[140px]">
               <Label>Date</Label>
               <Input
                 type="date"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 {...form.register("entry_date")}
               />
             </div>
 
-            {/* SAVE BUTTON now in SAME ROW */}
+            {/* SAVE / UPDATE BUTTON */}
             <div className="flex items-end md:col-span-1">
               <Button
                 className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
                 onClick={form.handleSubmit(saveEntry)}
               >
-                Save Entry
+                {editingId ? "Update" : "Save Entry"}
               </Button>
             </div>
 
           </div>
-
         </CardContent>
       </Card>
+
 
       {/* TABLE SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">
@@ -214,7 +253,6 @@ export default function CashbookEntry() {
           </div>
         </CardHeader>
 
-
         <CardContent className="p-0">
           <div className="max-h-[500px] overflow-y-auto">
             <Table className="w-full text-sm">
@@ -226,10 +264,9 @@ export default function CashbookEntry() {
                   <TableHead className="w-[200px] border-r">Detail</TableHead>
                   <TableHead className="text-right w-[130px] border-r">Credit</TableHead>
                   <TableHead className="text-right w-[130px] border-r">Debit</TableHead>
-                  <TableHead className="text-center w-[80px]">Action</TableHead>
+                  <TableHead className="text-center w-[120px]">Action</TableHead>
                 </TableRow>
               </TableHeader>
-
 
               <TableBody>
                 {entries
@@ -252,7 +289,16 @@ export default function CashbookEntry() {
                       <TableCell className="text-right text-red-600">
                         {entry.pay_status === "DEBIT" ? entry.amount : "-"}
                       </TableCell>
-                      <TableCell className="text-center">
+
+                      <TableCell className="text-center flex justify-center gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-[#0A2A43] text-white"
+                          onClick={() => handleEdit(entry)}
+                        >
+                          <Pencil size={14} />
+                        </Button>
+
                         <Button
                           variant="destructive"
                           size="sm"
@@ -261,6 +307,7 @@ export default function CashbookEntry() {
                           <Trash2 size={16} />
                         </Button>
                       </TableCell>
+
                     </TableRow>
                   ))}
               </TableBody>
@@ -269,8 +316,7 @@ export default function CashbookEntry() {
           </div>
         </CardContent>
 
-
-        {/* CASH IN HAND FOOTER */}
+        {/* FOOTER TOTAL */}
         <div className="border-t p-4 bg-gray-100 flex justify-between font-bold text-lg">
           <span>CASH IN HAND:</span>
           <span className={cashInHand >= 0 ? "text-green-600" : "text-red-600"}>
