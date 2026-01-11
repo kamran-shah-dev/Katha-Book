@@ -238,11 +238,11 @@ export default function AccountsEntry() {
 
           </div>
 
-          {/* ROW 2 FIXED */}
+          {/* ROW 2 WITH NTN SMALL + BIGGER SAVE BUTTON */}
           <div className="flex flex-col md:flex-row gap-3 w-full">
 
-            {/* NTN */}
-            <div className="flex-1">
+            {/* NTN - SMALLER WIDTH */}
+            <div className="w-[200px]">
               <Label>NTN Number (Optional)</Label>
               <Input
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -250,7 +250,7 @@ export default function AccountsEntry() {
               />
             </div>
 
-            {/* STATUS SMALL WIDTH */}
+            {/* STATUS - SMALL WIDTH */}
             <div className="w-[120px]">
               <Label>Status</Label>
               <Select
@@ -267,7 +267,7 @@ export default function AccountsEntry() {
               </Select>
             </div>
 
-            {/* ADDRESS FLEXES TO FILL SPACE */}
+            {/* ADDRESS - FLEXABLE TO FILL REMAINING SPACE */}
             <div className="flex-1">
               <Label>Address</Label>
               <Input
@@ -276,10 +276,10 @@ export default function AccountsEntry() {
               />
             </div>
 
-            {/* BUTTON STAYS IN SAME ROW RIGHT ALIGNED */}
-            <div className="flex items-end">
+            {/* SAVE BUTTON - WIDER THAN BEFORE */}
+            <div className="flex items-end w-[200px]">
               <Button
-                className="h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
                 onClick={editingId ? form.handleSubmit(updateEntry) : form.handleSubmit(onSubmit)}
               >
                 {editingId ? "Update" : "Save"}
@@ -287,8 +287,6 @@ export default function AccountsEntry() {
             </div>
 
           </div>
-
-
 
         </CardContent>
       </Card>
