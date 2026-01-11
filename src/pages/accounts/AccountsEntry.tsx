@@ -238,11 +238,11 @@ export default function AccountsEntry() {
 
           </div>
 
-          {/* ROW 2 WITH STATUS INCLUDED */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {/* ROW 2 FIXED */}
+          <div className="flex flex-col md:flex-row gap-3 w-full">
 
             {/* NTN */}
-            <div>
+            <div className="flex-1">
               <Label>NTN Number (Optional)</Label>
               <Input
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -250,8 +250,8 @@ export default function AccountsEntry() {
               />
             </div>
 
-            {/* STATUS — small width */}
-            <div className="w-[110px]">
+            {/* STATUS SMALL WIDTH */}
+            <div className="w-[120px]">
               <Label>Status</Label>
               <Select
                 value={form.watch("is_active") ? "true" : "false"}
@@ -267,8 +267,8 @@ export default function AccountsEntry() {
               </Select>
             </div>
 
-            {/* ADDRESS */}
-            <div className="md:col-span-1">
+            {/* ADDRESS FLEXES TO FILL SPACE */}
+            <div className="flex-1">
               <Label>Address</Label>
               <Input
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -276,10 +276,10 @@ export default function AccountsEntry() {
               />
             </div>
 
-            {/* SAVE BUTTON */}
+            {/* BUTTON STAYS IN SAME ROW RIGHT ALIGNED */}
             <div className="flex items-end">
               <Button
-                className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                className="h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
                 onClick={editingId ? form.handleSubmit(updateEntry) : form.handleSubmit(onSubmit)}
               >
                 {editingId ? "Update" : "Save"}
@@ -287,6 +287,8 @@ export default function AccountsEntry() {
             </div>
 
           </div>
+
+
 
         </CardContent>
       </Card>
