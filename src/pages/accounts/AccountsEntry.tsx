@@ -161,7 +161,7 @@ export default function AccountsEntry() {
             {/* SUB HEAD */}
             <div>
               <Label>
-                Sub Head <span className="text-red-600">*</span>
+                Head <span className="text-red-600">*</span>
               </Label>
 
               <Select

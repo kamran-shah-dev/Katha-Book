@@ -186,7 +186,7 @@ export default function ImportEntryDemo() {
             <div>
               <Label>Account</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Enter account"
                 {...form.register("account")}
               />
@@ -195,7 +195,7 @@ export default function ImportEntryDemo() {
             <div>
               <Label>Supplier</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Enter supplier name"
                 {...form.register("supplier")}
               />
@@ -205,7 +205,7 @@ export default function ImportEntryDemo() {
               <Label>Bags Qty</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("bags_qty")}
               />
             </div>
@@ -215,7 +215,7 @@ export default function ImportEntryDemo() {
               <Input
                 type="number"
                 step="0.001"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("weight_per_bag")}
               />
             </div>
@@ -225,7 +225,7 @@ export default function ImportEntryDemo() {
               <Input
                 type="number"
                 step="0.01"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("rate_per_kg")}
               />
             </div>
@@ -238,7 +238,7 @@ export default function ImportEntryDemo() {
             <div className="md:col-span-2">
               <Label>Vehicle Numbers</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="ABC-123, XYZ-555"
                 {...form.register("vehicle_numbers")}
               />
@@ -249,7 +249,7 @@ export default function ImportEntryDemo() {
               <div className="w-1/2">
                 <Label>GRN No</Label>
                 <Input
-                  className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   {...form.register("grn_no")}
                 />
               </div>
@@ -295,7 +295,7 @@ export default function ImportEntryDemo() {
               <Input
                 type="text"
                 placeholder="Search entries..."
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
