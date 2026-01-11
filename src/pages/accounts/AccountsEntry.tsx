@@ -159,7 +159,6 @@ export default function AccountsEntry() {
 
       {/* FORM CARD */}
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
-
         <CardHeader className="py-2 px-4">
           <CardTitle className="text-xl font-bold">
             {editingId ? "Update Account" : "Create Account"}
@@ -168,42 +167,46 @@ export default function AccountsEntry() {
 
         <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
 
-
           {/* ROW 1 */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
 
+            {/* NAME */}
             <div>
-              <Label>Account Name <span className="text-red-600">*</span></Label>
+              <Label>
+                Account Name <span className="text-red-600">*</span>
+              </Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("account_name")}
               />
             </div>
 
+            {/* HEAD */}
             <div>
               <Label>Head <span className="text-red-600">*</span></Label>
               <Select
                 value={form.watch("sub_head")}
-                onValueChange={v => form.setValue("sub_head", v)}
+                onValueChange={(v) => form.setValue("sub_head", v)}
               >
-                <SelectTrigger className="h-9 border-2 border-black">
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {subHeadOptions.map(s => (
+                  {subHeadOptions.map((s) => (
                     <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
+            {/* TYPE */}
             <div>
               <Label>Type <span className="text-red-600">*</span></Label>
               <Select
                 value={form.watch("balance_status")}
-                onValueChange={v => form.setValue("balance_status", v)}
+                onValueChange={(v) => form.setValue("balance_status", v)}
               >
-                <SelectTrigger className="h-9 border-2 border-black">
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -213,46 +216,49 @@ export default function AccountsEntry() {
               </Select>
             </div>
 
+            {/* OPENING BALANCE */}
             <div>
               <Label>Opening Balance <span className="text-red-600">*</span></Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("opening_balance")}
               />
             </div>
 
+            {/* CELL NO */}
             <div>
               <Label>Cell No <span className="text-red-600">*</span></Label>
               <Input
                 maxLength={11}
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("cell_no")}
               />
             </div>
 
           </div>
 
-
-          {/* ROW 2 (OPTION C) */}
+          {/* ROW 2 WITH STATUS INCLUDED */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
 
+            {/* NTN */}
             <div>
               <Label>NTN Number (Optional)</Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("ntn_number")}
               />
             </div>
 
-            <div className="md:col-span-1">
+            {/* STATUS — small width */}
+            <div className="w-[110px]">
               <Label>Status</Label>
               <Select
                 value={form.watch("is_active") ? "true" : "false"}
                 onValueChange={(v) => form.setValue("is_active", v === "true")}
               >
-                <SelectTrigger className="h-9 border-2 border-black">
-                  <SelectValue placeholder="Select status" />
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="true">Active</SelectItem>
@@ -261,18 +267,20 @@ export default function AccountsEntry() {
               </Select>
             </div>
 
+            {/* ADDRESS */}
             <div className="md:col-span-1">
               <Label>Address</Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("address")}
               />
             </div>
 
+            {/* SAVE BUTTON */}
             <div className="flex items-end">
               <Button
-                className="w-full h-10 bg-[#0A2A43] text-white font-semibold"
-                onClick={form.handleSubmit(onSubmit)}
+                className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                onClick={editingId ? form.handleSubmit(updateEntry) : form.handleSubmit(onSubmit)}
               >
                 {editingId ? "Update" : "Save"}
               </Button>
@@ -282,6 +290,7 @@ export default function AccountsEntry() {
 
         </CardContent>
       </Card>
+
 
       {/* TABLE CARD */}
       <Card className="w-full border border-gray-300 shadow-sm">
