@@ -1,5 +1,7 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import "./invoice.css"
+
 
 export default function ExportInvoiceTemplate({ entry }) {
 
@@ -33,7 +35,7 @@ export default function ExportInvoiceTemplate({ entry }) {
           <tbody>
             <tr>
               <td>Invoice No: {entry.invoice_no}</td>
-              <td><b>Export Invoice</b></td>
+              <td style={{ textAlign: "center" }}><b>Export Invoice</b></td>
               <td>GD No: {entry.gd_no}</td>
             </tr>
             <tr>
@@ -70,7 +72,7 @@ export default function ExportInvoiceTemplate({ entry }) {
 
             <tr>
               <td></td>
-              <td colSpan={6}>
+              <td colSpan={6} style={{ textAlign: "left" }}>
                 <b>Vehicle Numbers:</b><br />
                 {entry.vehicle_numbers}
               </td>
@@ -96,7 +98,7 @@ export default function ExportInvoiceTemplate({ entry }) {
         <button onClick={() => window.print()}>Print</button>
         <button onClick={exportPDF}>Export PDF</button>
       </div>
-
     </div>
   );
 }
+

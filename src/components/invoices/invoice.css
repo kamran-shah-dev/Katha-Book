@@ -1,0 +1,104 @@
+.invoice-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: white;
+}
+
+.invoice-wrapper {
+  width: 210mm;           /* EXACT A4 width */
+  padding: 10mm;
+  background: white;
+  border: 1px solid black;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+.banner {
+  width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+/* INFO TABLE */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+.info-table td {
+  border: 1px solid black;
+  padding: 6px;
+  font-weight: bold;
+}
+
+/* PRODUCT TABLE */
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.product-table th,
+.product-table td {
+  border: 1px solid black;
+  padding: 6px;
+  text-align: center;
+}
+
+.product-table th {
+  background: #eee;
+  font-weight: bold;
+}
+
+.product-table td:first-child {
+  width: 40px; /* S.No smaller */
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.address {
+  width: 60%;
+  border: 1px solid black;
+  padding: 6px;
+}
+
+.totals {
+  width: 35%;
+  border: 1px solid black;
+  padding: 6px;
+}
+
+/* Buttons */
+.actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 20px;
+}
+
+.actions button {
+  padding: 10px 20px;
+  background: #0A2A43;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+.actions button:hover {
+  background: #051A28;
+}
+
+/* Print mode ONLY invoice */
+@media print {
+  .actions {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+}
