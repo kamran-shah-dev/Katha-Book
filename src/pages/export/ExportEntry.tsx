@@ -159,6 +159,12 @@ export default function ExportEntryDemo() {
     e.invoice_no.toLowerCase().includes(search.toLowerCase())
   );
 
+  const openInvoicePreview = (entry: DemoEntry) => {
+    localStorage.setItem("invoiceData", JSON.stringify(entry));
+    window.open("/invoice-preview", "_blank");
+  };
+
+
   return (
     <div className="space-y-6">
 
