@@ -31,6 +31,11 @@ export default function ExportInvoiceTemplate({ entry }) {
 
         <img src="/company_banner.jpeg" className="banner" />
 
+         <div className="actions">
+        <button onClick={() => window.print()}>Print</button>
+        <button onClick={exportPDF}>Export PDF</button>
+      </div>
+
         <table className="info-table">
           <tbody>
             <tr>
@@ -94,10 +99,7 @@ export default function ExportInvoiceTemplate({ entry }) {
 
       </div>
 
-      <div className="actions">
-        <button onClick={() => window.print()}>Print</button>
-        <button onClick={exportPDF}>Export PDF</button>
-      </div>
+     
     </div>
   );
 }

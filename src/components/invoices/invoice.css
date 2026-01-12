@@ -2,44 +2,46 @@
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 20px;
   background: white;
+  padding: 20px;
 }
 
+/* Main printable area */
 .invoice-wrapper {
-  width: 210mm;          
-  padding: 8mm;
+  width: 210mm;
   background: white;
+  padding: 8mm;
   border: 2px solid black;
   font-family: Arial, sans-serif;
   font-size: 13px;
 }
 
+/* Banner smaller + centered */
 .banner {
-  width: 80%;  
   display: block;
-  margin: 0 auto 10px auto;
+  width: 75%;
+  margin: 0 auto 8px auto;
 }
 
-/* Action buttons small + rounded */
-.action-buttons {
+/* Small buttons under banner */
+.actions {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
-.action-buttons button {
-  padding: 6px 15px;
+.actions button {
+  padding: 6px 18px;
   background: #0A2A43;
   color: white;
-  border-radius: 6px;
   border: none;
+  border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  width: 100px;
 }
-.action-buttons button:hover {
+
+.actions button:hover {
   background: #051A28;
 }
 
@@ -47,7 +49,7 @@
 .info-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 5px;
+  margin-top: 5px;
 }
 .info-table td {
   border: 1px solid black;
@@ -55,10 +57,11 @@
   font-weight: bold;
 }
 
-/* Product table */
+/* Product Details Table */
 .product-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 10px;
 }
 .product-table th,
 .product-table td {
@@ -66,34 +69,33 @@
   padding: 6px;
   text-align: center;
 }
-
 .product-table th {
-  background: #eee;
+  background: #e5e5e5;
   font-weight: bold;
 }
 
-/* Footer section */
+/* Footer - address + totals */
 .footer {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .address {
   width: 60%;
-  border: 1px solid black;
   padding: 6px;
+  border: 1px solid black;
 }
 
 .totals {
   width: 35%;
-  border: 1px solid black;
   padding: 6px;
+  border: 1px solid black;
 }
 
-/* PRINT MODE */
+/* Hide buttons when printing */
 @media print {
-  .action-buttons {
+  .actions {
     display: none !important;
   }
   body {
