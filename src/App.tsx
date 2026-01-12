@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainLayout from "@/components/layout/MainLayout";
+import InvoicePreview from "@/pages/invoice/InvoicePreview";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AccountsEntry from "./pages/accounts/AccountsEntry";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/export" element={<ProtectedPage><ExportEntry /></ProtectedPage>} />
             <Route path="/invoice" element={<ProtectedPage><InvoiceEntry /></ProtectedPage>} />
 
+            <Route path="/invoice-preview" element={<InvoicePreview />} />
             <Route path="/utility/products" element={<ProtectedPage><ProductsPage /></ProtectedPage>} />
             <Route path="/utility/vehicles" element={<ProtectedPage><VehiclesPage /></ProtectedPage>} />
             <Route path="/utility/import" element={<ProtectedPage><DataImport /></ProtectedPage>} />
