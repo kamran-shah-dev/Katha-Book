@@ -361,6 +361,15 @@ export default function ExportEntryDemo() {
                           <Trash2 size={16} />
                         </Button>
 
+                        <Button
+                          size="sm"
+                          className="bg-blue-700 text-white"
+                          onClick={() => openInvoicePreview(entry)}
+                        >
+                          Print
+                        </Button>
+
+
                       </TableCell>
                     </TableRow>
                   ))
