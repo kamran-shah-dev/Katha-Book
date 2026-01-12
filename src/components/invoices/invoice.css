@@ -7,38 +7,58 @@
 }
 
 .invoice-wrapper {
-  width: 210mm;           /* EXACT A4 width */
-  padding: 10mm;
+  width: 210mm;          
+  padding: 8mm;
   background: white;
-  border: 1px solid black;
+  border: 2px solid black;
   font-family: Arial, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .banner {
-  width: 100%;
-  height: auto;
+  width: 80%;  
+  display: block;
+  margin: 0 auto 10px auto;
+}
+
+/* Action buttons small + rounded */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
-/* INFO TABLE */
+.action-buttons button {
+  padding: 6px 15px;
+  background: #0A2A43;
+  color: white;
+  border-radius: 6px;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100px;
+}
+.action-buttons button:hover {
+  background: #051A28;
+}
+
+/* Info table */
 .info-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 .info-table td {
   border: 1px solid black;
-  padding: 6px;
+  padding: 5px;
   font-weight: bold;
 }
 
-/* PRODUCT TABLE */
+/* Product table */
 .product-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
-  margin-bottom: 10px;
 }
 .product-table th,
 .product-table td {
@@ -52,14 +72,11 @@
   font-weight: bold;
 }
 
-.product-table td:first-child {
-  width: 40px; /* S.No smaller */
-}
-
+/* Footer section */
 .footer {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .address {
@@ -74,28 +91,9 @@
   padding: 6px;
 }
 
-/* Buttons */
-.actions {
-  margin-top: 20px;
-  display: flex;
-  gap: 20px;
-}
-
-.actions button {
-  padding: 10px 20px;
-  background: #0A2A43;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-.actions button:hover {
-  background: #051A28;
-}
-
-/* Print mode ONLY invoice */
+/* PRINT MODE */
 @media print {
-  .actions {
+  .action-buttons {
     display: none !important;
   }
   body {
