@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import{createCashEntry , deleteCashEntry, fetchCashEntries, updateCashEntry } from '@/services/cashbook.services'
+import { createCashEntry, deleteCashEntry, fetchCashEntries, updateCashEntry } from "@/services/cashbook.services";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchAccounts } from "@/services/accounts.services";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -26,6 +27,7 @@ import { Trash2, RefreshCw, Pencil } from "lucide-react";
 
 // -------- SCHEMA ----------
 const cashbookSchema = z.object({
+  account_id: z.string().min(1, "Account ID missing"),
   account_name: z.string().min(1, "Account is required"),
   payment_detail: z.string().optional(),
   pay_status: z.enum(["CREDIT", "DEBIT"]),
@@ -34,22 +36,17 @@ const cashbookSchema = z.object({
   remarks: z.string().optional(),
 });
 
-
 export default function CashbookEntry() {
-  const demoAccounts = [
-    "AL-HAMD TRADERS",
-    "BISMILLAH LOGISTICS",
-    "USMAN EXPORTS",
-    "AHMED CARGO SERVICES",
-  ];
-
   const [entries, setEntries] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
 
   const form = useForm({
     resolver: zodResolver(cashbookSchema),
     defaultValues: {
+      account_id: "",
       account_name: "",
       payment_detail: "",
       pay_status: "DEBIT",
@@ -60,11 +57,31 @@ export default function CashbookEntry() {
   });
 
   const cashInHand = entries.reduce((total, e) => {
-    return e.pay_status === "CREDIT"
+    return e.type === "CREDIT"
       ? total + Number(e.amount)
       : total - Number(e.amount);
   }, 0);
 
+  const loadAccounts = async () => {
+    try {
+      const list = await fetchAccounts();
+      setAccounts(list);
+    } catch (err) {
+      console.error("Error loading accounts:", err);
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAccounts();
+    loadEntries();
+  }, []);
+
+  const loadEntries = async () => {
+    const list = await fetchCashEntries();
+    setEntries(list);
+  };
 
   // SAVE NEW ENTRY
   const saveEntry = async (data: any) => {
@@ -77,65 +94,44 @@ export default function CashbookEntry() {
 
       await loadEntries();
       setEditingId(null);
-      form.reset();
+
+      form.reset({
+        account_id: "",
+        account_name: "",
+        payment_detail: "",
+        pay_status: "DEBIT",
+        amount: 0,
+        entry_date: new Date().toISOString().split("T")[0],
+        remarks: "",
+      });
     } catch (err) {
       console.error("Error saving entry:", err);
     }
   };
 
-  const loadEntries = async () => {
-    const list = await fetchCashEntries();
-    setEntries(list);
-  };
-
-
-
   // DELETE ENTRY
-const deleteEntry = async (id: string) => {
-  if (!confirm("Remove this entry?")) return;
+  const deleteEntry = async (id: string) => {
+    if (!confirm("Remove this entry?")) return;
 
-  await deleteCashEntry(id);
-  loadEntries();
-};
-
+    await deleteCashEntry(id);
+    loadEntries();
+  };
 
   // LOAD ENTRY INTO FORM FOR EDITING
   const handleEdit = (entry: any) => {
-  setEditingId(entry.id);
+    setEditingId(entry.id);
 
-  form.setValue("account_name", entry.account_name);
-  form.setValue("payment_detail", entry.payment_details || "");
-  form.setValue("pay_status", entry.type);
-  form.setValue("amount", entry.amount);
-  form.setValue("entry_date", entry.date.toDate().toISOString().split("T")[0]);
-  form.setValue("remarks", entry.remarks || "");
-};
-
-
-
-  // UPDATE EXISTING ENTRY
-  const updateEntry = (id: number, data: any) => {
-    const updated = entries.map((e) =>
-      e.id === id ? { ...e, ...data } : e
-    );
-
-    setEntries(updated);
-    setEditingId(null);
-
-    form.reset({
-      account_name: "",
-      payment_detail: "",
-      pay_status: "DEBIT",
-      amount: 0,
-      entry_date: new Date().toISOString().split("T")[0],
-      remarks: "",
-    });
+    form.setValue("account_id", entry.account_id);
+    form.setValue("account_name", entry.account_name);
+    form.setValue("payment_detail", entry.payment_details || "");
+    form.setValue("pay_status", entry.type);
+    form.setValue("amount", entry.amount);
+    form.setValue("entry_date", entry.date.toDate().toISOString().split("T")[0]);
+    form.setValue("remarks", entry.remarks || "");
   };
-
 
   return (
     <div className="space-y-6">
-
       {/* FORM SECTION */}
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
         <CardHeader className="py-2 px-4">
@@ -145,26 +141,32 @@ const deleteEntry = async (id: string) => {
         </CardHeader>
 
         <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
-
           {/* ROW 1 */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-
             {/* ACCOUNT NAME */}
             <div className="md:col-span-1">
               <Label>Account Name</Label>
               <Select
-                value={form.watch("account_name")}
-                onValueChange={(v) => form.setValue("account_name", v)}
+                value={form.watch("account_id")}
+                onValueChange={(id) => {
+                  const acc = accounts.find((a) => a.id === id);
+                  form.setValue("account_id", id);
+                  form.setValue("account_name", acc?.account_name || "");
+                }}
               >
                 <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
-                  {demoAccounts.map((acc) => (
-                    <SelectItem key={acc} value={acc}>
-                      {acc}
-                    </SelectItem>
-                  ))}
+                  {loadingAccounts ? (
+                    <div className="p-2 text-gray-500">Loading...</div>
+                  ) : (
+                    accounts.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.account_name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -225,18 +227,14 @@ const deleteEntry = async (id: string) => {
                 {editingId ? "Update" : "Save Entry"}
               </Button>
             </div>
-
           </div>
         </CardContent>
       </Card>
 
-
       {/* TABLE SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">
-
         <CardHeader className="py-2 px-4">
           <div className="flex justify-between items-center">
-
             <div className="flex items-center gap-4">
               <CardTitle className="text-xl font-bold">Cashbook Entries</CardTitle>
 
@@ -252,14 +250,12 @@ const deleteEntry = async (id: string) => {
             <Button variant="outline" size="sm">
               <RefreshCw className="h-4 w-4" />
             </Button>
-
           </div>
         </CardHeader>
 
         <CardContent className="p-0">
           <div className="max-h-[500px] overflow-y-auto">
             <Table className="w-full text-sm">
-
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b border-gray-300">
                   <TableHead className="w-[150px] border-r">Date</TableHead>
@@ -267,6 +263,7 @@ const deleteEntry = async (id: string) => {
                   <TableHead className="w-[200px] border-r">Detail</TableHead>
                   <TableHead className="text-right w-[130px] border-r">Credit</TableHead>
                   <TableHead className="text-right w-[130px] border-r">Debit</TableHead>
+                  <TableHead className="text-right w-[150px] border-r">Account Balance</TableHead>
                   <TableHead className="text-center w-[120px]">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -281,17 +278,28 @@ const deleteEntry = async (id: string) => {
                       key={entry.id}
                       className="border-b border-gray-200 hover:bg-gray-50"
                     >
-                      <TableCell>{entry.entry_date}</TableCell>
+                      <TableCell>
+                        {entry.date?.toDate().toISOString().split("T")[0]}
+                      </TableCell>
+
                       <TableCell className="truncate">{entry.account_name}</TableCell>
+
                       <TableCell className="truncate">
-                        {entry.payment_detail || "-"}
+                        {entry.payment_details || "-"}
                       </TableCell>
+
                       <TableCell className="text-right text-green-600">
-                        {entry.pay_status === "CREDIT" ? entry.amount : "-"}
+                        {entry.type === "CREDIT" ? entry.amount : "-"}
                       </TableCell>
+
                       <TableCell className="text-right text-red-600">
-                        {entry.pay_status === "DEBIT" ? entry.amount : "-"}
+                        {entry.type === "DEBIT" ? entry.amount : "-"}
                       </TableCell>
+
+                      <TableCell className="text-right">
+                      {entry.balance_after?.toLocaleString() || 0}
+                    </TableCell>
+
 
                       <TableCell className="text-center flex justify-center gap-2">
                         <Button
@@ -310,11 +318,9 @@ const deleteEntry = async (id: string) => {
                           <Trash2 size={16} />
                         </Button>
                       </TableCell>
-
                     </TableRow>
                   ))}
               </TableBody>
-
             </Table>
           </div>
         </CardContent>
@@ -326,9 +332,7 @@ const deleteEntry = async (id: string) => {
             {cashInHand}
           </span>
         </div>
-
       </Card>
-
     </div>
   );
 }
