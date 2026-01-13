@@ -10,6 +10,7 @@ import {
   orderBy,
   where,
   limit
+  
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
@@ -69,7 +70,6 @@ export async function createCashEntry(data: any) {
   const docRef = await addDoc(cashbookCollection, payload);
   return docRef.id;
 }
-
 
 // 🔥 GENERATE SEARCH KEYWORDS
 function generateKeywords(name: string) {

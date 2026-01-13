@@ -119,16 +119,15 @@ export default function CashbookEntry() {
 
   // LOAD ENTRY INTO FORM FOR EDITING
   const handleEdit = (entry: any) => {
-    setEditingId(entry.id);
+  setEditingId(entry.id);
 
-    form.setValue("account_id", entry.account_id);
-    form.setValue("account_name", entry.account_name);
-    form.setValue("payment_detail", entry.payment_details || "");
-    form.setValue("pay_status", entry.type);
-    form.setValue("amount", entry.amount);
-    form.setValue("entry_date", entry.date.toDate().toISOString().split("T")[0]);
-    form.setValue("remarks", entry.remarks || "");
-  };
+  form.setValue("account_name", entry.account_name);
+  form.setValue("payment_detail", entry.payment_details || "");
+  form.setValue("pay_status", entry.type);
+  form.setValue("amount", entry.amount);
+  form.setValue("entry_date", entry.date.toDate().toISOString().split("T")[0]);
+  form.setValue("remarks", entry.remarks || "");
+};
 
   return (
     <div className="space-y-6">
