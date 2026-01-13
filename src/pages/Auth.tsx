@@ -40,18 +40,18 @@ export default function Auth() {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        setErrorMsg("Invalid phone or password.");
+        setErrorMsg("Invalid Id or password.");
         setLoading(false);
         return;
       }
 
       const userData = userSnap.data();
-      const storedHash = userData.passwordHash;
+      const storedHash = userData.password;
 
       const match = await bcrypt.compare(password, storedHash);
 
       if (!match) {
-        setErrorMsg("Invalid phone or password.");
+        setErrorMsg("Invalid Id or password.");
         setLoading(false);
         return;
       }
@@ -93,14 +93,13 @@ export default function Auth() {
 
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-5">
-            
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">User Id</Label>
               <Input
                 id="phone"
                 type="text"
                 className="h-12 rounded-lg border-2 border-gray-300"
-                placeholder="0312xxxxxxx"
+                placeholder="Enter your user id"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 disabled={loading}

@@ -13,18 +13,9 @@ import AccountsEntry from "./pages/accounts/AccountsEntry";
 import CashbookEntry from "./pages/cashbook/CashbookEntry";
 import GoodsReceivedEntry from "./pages/import/ImportEntry";
 import ExportEntry from "./pages/export/ExportEntry";
-import ProductsPage from "./pages/utility/ProductsPage";
-import VehiclesPage from "./pages/utility/VehiclesPage";
 import DataImport from "./pages/utility/DataImport";
 import LedgerReport from "./pages/reports/LedgerReport";
-import AccountsBalanceReport from "./pages/reports/AccountsBalanceReport";
-import SubHeadBalanceReport from "./pages/reports/SubHeadBalanceReport";
-import CashbookReport from "./pages/reports/CashbookReport";
-import GoodsReceivedReport from "./pages/reports/GoodsReceivedReport";
-import InvoiceSearch from "./pages/reports/InvoiceSearch";
-import VehicleWiseReport from "./pages/reports/VehicleWiseReport";
-import GDSearch from "./pages/reports/GDSearch";
-import ProductReport from "./pages/reports/ProductReport";
+import CashbookReport  from "./pages/reports/CashbookReport";
 import CreditDebitReport from "./pages/reports/CreditDebitReport";
 import NotFound from "./pages/NotFound";
 
@@ -57,21 +48,10 @@ const App = () => (
             <Route path="/cashbook" element={<ProtectedPage><CashbookEntry /></ProtectedPage>} />
             <Route path="/goods-received" element={<ProtectedPage><GoodsReceivedEntry /></ProtectedPage>} />
             <Route path="/export" element={<ProtectedPage><ExportEntry /></ProtectedPage>} />
-
-            <Route path="/invoice-preview" element={<InvoicePreview />} />
-            <Route path="/utility/products" element={<ProtectedPage><ProductsPage /></ProtectedPage>} />
-            <Route path="/utility/vehicles" element={<ProtectedPage><VehiclesPage /></ProtectedPage>} />
-            <Route path="/utility/import" element={<ProtectedPage><DataImport /></ProtectedPage>} />
-
-            <Route path="/reports/ledger" element={<ProtectedPage><LedgerReport /></ProtectedPage>} />
-            <Route path="/reports/accounts-balance" element={<ProtectedPage><AccountsBalanceReport /></ProtectedPage>} />
-            <Route path="/reports/sub-head-balance" element={<ProtectedPage><SubHeadBalanceReport /></ProtectedPage>} />
             <Route path="/reports/cashbook" element={<ProtectedPage><CashbookReport /></ProtectedPage>} />
-            <Route path="/reports/goods-received" element={<ProtectedPage><GoodsReceivedReport /></ProtectedPage>} />
-            <Route path="/reports/invoice-search" element={<ProtectedPage><InvoiceSearch /></ProtectedPage>} />
-            <Route path="/reports/vehicle-wise" element={<ProtectedPage><VehicleWiseReport /></ProtectedPage>} />
-            <Route path="/reports/gd-search" element={<ProtectedPage><GDSearch /></ProtectedPage>} />
-            <Route path="/reports/product" element={<ProtectedPage><ProductReport /></ProtectedPage>} />
+            <Route path="/invoice-preview" element={<InvoicePreview />} />
+            <Route path="/utility/import" element={<ProtectedPage><DataImport /></ProtectedPage>} />
+            <Route path="/reports/ledger" element={<ProtectedPage><LedgerReport /></ProtectedPage>} />
             <Route path="/reports/credit-debit" element={<ProtectedPage><CreditDebitReport /></ProtectedPage>} />
 
             <Route path="*" element={<NotFound />} />

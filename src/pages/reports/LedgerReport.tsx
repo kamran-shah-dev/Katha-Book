@@ -1,260 +1,213 @@
-import { useState, useEffect, useRef } from 'react';
-import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useRef } from "react";
+import { format } from "date-fns";
+import { db } from "@/firebaseConfig";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Printer, Search } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs
+} from "firebase/firestore";
 
-type Account = Database['public']['Tables']['accounts']['Row'];
-type LedgerEntry = Database['public']['Tables']['ledger_entries']['Row'];
-
-interface LedgerRow {
-  date: string;
-  detail: string;
-  credit: number;
-  debit: number;
-  balance: number;
-}
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, Printer } from "lucide-react";
 
 export default function LedgerReport() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState('');
-  const [fromDate, setFromDate] = useState(format(new Date(new Date().getFullYear(), 0, 1), 'yyyy-MM-dd'));
-  const [toDate, setToDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [ledgerRows, setLedgerRows] = useState<LedgerRow[]>([]);
-  const [openingBalance, setOpeningBalance] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccountId, setSelectedAccountId] = useState("");
+  const [selectedAccount, setSelectedAccount] = useState(null);
+
+  const [fromDate, setFromDate] = useState(
+    format(new Date(new Date().getFullYear(), 0, 1), "yyyy-MM-dd")
+  );
+  const [toDate, setToDate] = useState(format(new Date(), "yyyy-MM-dd"));
+
+  const [rows, setRows] = useState([]);
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Load accounts
   useEffect(() => {
-    const fetchAccounts = async () => {
-      const { data } = await supabase.from('accounts').select('*').order('account_name');
-      setAccounts(data || []);
+    const loadAccounts = async () => {
+      const snap = await getDocs(collection(db, "accounts"));
+      setAccounts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     };
-    fetchAccounts();
+    loadAccounts();
   }, []);
 
+  // Generate Ledger
   const generateReport = async () => {
-    if (!selectedAccountId) return;
-    setLoading(true);
+    if (!selectedAccountId) return alert("Select account!");
 
-    try {
-      const account = accounts.find(a => a.id === selectedAccountId);
-      setSelectedAccount(account || null);
+    const acc = accounts.find((a) => a.id === selectedAccountId);
+    setSelectedAccount(acc);
 
-      // Get opening balance from account
-      let runningBalance = account?.balance_status === 'CREDIT' 
-        ? Number(account.opening_balance) 
-        : -Number(account.opening_balance);
+    const q = query(
+      collection(db, "cashbook_entries"),
+      where("account_id", "==", selectedAccountId),
+      where("date", ">=", new Date(fromDate)),
+      where("date", "<=", new Date(toDate)),
+      orderBy("date", "asc"),
+      orderBy("created_at", "asc")
+    );
 
-      // Get entries before from date for opening balance
-      const { data: priorEntries } = await supabase
-        .from('ledger_entries')
-        .select('credit_amount, debit_amount')
-        .eq('account_id', selectedAccountId)
-        .eq('is_deleted', false)
-        .lt('entry_date', fromDate);
+    const snap = await getDocs(q);
 
-      if (priorEntries) {
-        priorEntries.forEach(entry => {
-          runningBalance += Number(entry.credit_amount) - Number(entry.debit_amount);
-        });
-      }
+    const list = [];
+    let runningBalance = Number(acc.opening_balance || 0);
 
-      setOpeningBalance(runningBalance);
+    // Add Opening Balance Row
+    list.push({
+      date: fromDate,
+      detail: "Opening Balance",
+      credit: runningBalance > 0 ? runningBalance : 0,
+      debit: runningBalance < 0 ? Math.abs(runningBalance) : 0,
+      balance: runningBalance
+    });
 
-      // Get entries in date range
-      const { data: entries } = await supabase
-        .from('ledger_entries')
-        .select('*')
-        .eq('account_id', selectedAccountId)
-        .eq('is_deleted', false)
-        .gte('entry_date', fromDate)
-        .lte('entry_date', toDate)
-        .order('entry_date')
-        .order('created_at');
+    snap.docs.forEach((doc) => {
+      const e = doc.data();
 
-      const rows: LedgerRow[] = [];
+      const credit = e.type === "CREDIT" ? Number(e.amount) : 0;
+      const debit = e.type === "DEBIT" ? Number(e.amount) : 0;
 
-      // Add opening balance row
-      rows.push({
-        date: fromDate,
-        detail: 'Opening Balance',
-        credit: runningBalance > 0 ? runningBalance : 0,
-        debit: runningBalance < 0 ? Math.abs(runningBalance) : 0,
-        balance: runningBalance,
+      runningBalance += credit - debit;
+
+      list.push({
+        date: e.date.toDate(),
+        detail: e.payment_details || "-",
+        credit,
+        debit,
+        balance: runningBalance
       });
+    });
 
-      // Process entries
-      (entries || []).forEach(entry => {
-        const credit = Number(entry.credit_amount) || 0;
-        const debit = Number(entry.debit_amount) || 0;
-        runningBalance += credit - debit;
-
-        rows.push({
-          date: entry.entry_date,
-          detail: entry.detail || '-',
-          credit,
-          debit,
-          balance: runningBalance,
-        });
-      });
-
-      setLedgerRows(rows);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
+    setRows(list);
   };
 
+  // PRINT FUNCTION
   const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
+    const win = window.open("", "_blank");
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    printWindow.document.write(`
+    win.document.write(`
       <html>
-        <head>
-          <title>Ledger Report - ${selectedAccount?.account_name}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-            h1 { text-align: center; margin-bottom: 5px; }
-            .period { text-align: center; margin-bottom: 20px; color: #666; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 6px 8px; }
-            th { background: #f5f5f5; text-align: left; }
-            .text-right { text-align: right; }
-            .credit { color: green; }
-            .debit { color: red; }
-          </style>
-        </head>
-        <body>
-          <h1>Ledger Report</h1>
-          <p class="period">${selectedAccount?.account_name}<br/>
-          ${format(new Date(fromDate), 'dd/MM/yyyy')} to ${format(new Date(toDate), 'dd/MM/yyyy')}</p>
-          ${printContent.innerHTML}
-        </body>
+      <head>
+        <title>Ledger Report</title>
+        <style>
+          body { font-family: Arial; padding: 20px; }
+          h1 { text-align: center; }
+          .center { text-align:center; margin-bottom:20px; color:#777; }
+          table { width: 100%; border-collapse: collapse; font-size:13px; }
+          th, td { border:1px solid #ccc; padding:8px; }
+          th { background:#f2f2f2; }
+          .credit { color:green; }
+          .debit { color:red; }
+        </style>
+      </head>
+      <body>
+        <h1>Ledger Report</h1>
+        <div class="center">
+          ${selectedAccount?.account_name}<br>
+          ${format(new Date(fromDate), "dd MMM yyyy")} -
+          ${format(new Date(toDate), "dd MMM yyyy")}
+        </div>
+        ${printRef.current.innerHTML}
+      </body>
       </html>
     `);
-    printWindow.document.close();
-    printWindow.print();
+
+    win.document.close();
+    win.print();
   };
-
-  const totals = ledgerRows.reduce((acc, row, i) => {
-    if (i === 0) return acc; // Skip opening balance
-    return {
-      credit: acc.credit + row.credit,
-      debit: acc.debit + row.debit,
-    };
-  }, { credit: 0, debit: 0 });
-
-  const closingBalance = ledgerRows.length > 0 ? ledgerRows[ledgerRows.length - 1].balance : 0;
 
   return (
     <div className="space-y-4">
+      
       <h1 className="text-2xl font-bold">Ledger Report</h1>
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-5">
-            <div className="md:col-span-2 space-y-1">
-              <Label>Account</Label>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.account_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>From Date</Label>
-              <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label>To Date</Label>
-              <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-            </div>
-            <div className="flex items-end gap-2">
-              <Button onClick={generateReport} disabled={!selectedAccountId || loading} className="flex-1">
-                <Search className="h-4 w-4 mr-1" /> {loading ? 'Loading...' : 'Generate'}
-              </Button>
-              {ledgerRows.length > 0 && (
-                <Button variant="outline" onClick={handlePrint}>
-                  <Printer className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+
+          {/* Account Selection */}
+          <div>
+            <Label>Account</Label>
+            <select
+              className="h-10 border rounded px-2 w-full"
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+            >
+              <option value="">Select Account</option>
+              {accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.account_name}
+                </option>
+              ))}
+            </select>
           </div>
+
+          <div>
+            <Label>From Date</Label>
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+          </div>
+
+          <div>
+            <Label>To Date</Label>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+          </div>
+
+          <div className="flex items-end gap-2">
+            <Button onClick={generateReport}>
+              <Search className="w-4 h-4 mr-2" />
+              Generate
+            </Button>
+
+            {rows.length > 0 && (
+              <Button variant="outline" onClick={handlePrint}>
+                <Printer className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+
         </CardContent>
       </Card>
 
-      {ledgerRows.length > 0 && (
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-lg">{selectedAccount?.account_name} - Ledger</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0" ref={printRef}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-28">Date</TableHead>
-                  <TableHead>Detail</TableHead>
-                  <TableHead className="text-right w-32">Credit</TableHead>
-                  <TableHead className="text-right w-32">Debit</TableHead>
-                  <TableHead className="text-right w-36">Balance</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ledgerRows.map((row, i) => (
-                  <TableRow key={i} className={i === 0 ? 'bg-muted/50 font-medium' : ''}>
-                    <TableCell>{format(new Date(row.date), 'dd/MM/yyyy')}</TableCell>
-                    <TableCell>{row.detail}</TableCell>
-                    <TableCell className="text-right text-green-600">
-                      {row.credit > 0 ? row.credit.toLocaleString() : '-'}
-                    </TableCell>
-                    <TableCell className="text-right text-red-600">
-                      {row.debit > 0 ? row.debit.toLocaleString() : '-'}
-                    </TableCell>
-                    <TableCell className={`text-right font-medium ${row.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {Math.abs(row.balance).toLocaleString()} {row.balance >= 0 ? 'Cr' : 'Dr'}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="bg-muted font-bold">
-                  <TableCell colSpan={2}>Totals</TableCell>
-                  <TableCell className="text-right text-green-600">{totals.credit.toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-red-600">{totals.debit.toLocaleString()}</TableCell>
-                  <TableCell className={`text-right ${closingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {Math.abs(closingBalance).toLocaleString()} {closingBalance >= 0 ? 'Cr' : 'Dr'}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+      {/* Report Table */}
+      {rows.length > 0 && (
+        <div ref={printRef}>
+          <table className="w-full border-collapse shadow-sm">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Details</th>
+                <th style={{ textAlign: "right" }}>Credit</th>
+                <th style={{ textAlign: "right" }}>Debit</th>
+                <th style={{ textAlign: "right" }}>Balance</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td>{format(new Date(r.date), "dd MMM yyyy")}</td>
+                  <td>{r.detail}</td>
+                  <td style={{ textAlign: "right", color: "green" }}>
+                    {r.credit ? "Rs. " + r.credit.toLocaleString() : ""}
+                  </td>
+                  <td style={{ textAlign: "right", color: "red" }}>
+                    {r.debit ? "Rs. " + r.debit.toLocaleString() : ""}
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    {r.balance >= 0 ? "Rs. " + r.balance.toLocaleString() : "-Rs. " + Math.abs(r.balance).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
+
     </div>
   );
 }

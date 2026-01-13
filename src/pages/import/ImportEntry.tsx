@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 
@@ -9,32 +9,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshCw, Trash2, Pencil } from "lucide-react";
 
-/** DEMO TYPES */
-interface ImportEntry {
-  id: string;
-  invoice_no: string;
-  account: string;
-  supplier: string;
-  bags_qty: number;
-  weight_per_bag: number;
-  rate_per_kg: number;
-  total_weight: number;
-  amount: number;
-  vehicle_numbers: string;
-  grn_no: string;
-  entry_date: string;
-}
+import {
+  fetchImportEntries,
+  createImportEntry,
+  updateImportEntryById,
+  deleteImportEntryById,
+  getLastInvoiceNo
+} from "@/services/import.services";
 
-export default function ImportEntryDemo() {
-  const [entries, setEntries] = useState<ImportEntry[]>([]);
+import { fetchAccounts } from "@/services/accounts.services";
+
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+
+export default function ImportEntryPage() {
+  const [entries, setEntries] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("IMP001");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
 
-  // FORM SETUP
   const form = useForm({
     defaultValues: {
-      account: "",
+      account_id: "",
+      account_name: "",
       supplier: "",
       bags_qty: 0,
       weight_per_bag: 0,
@@ -45,7 +49,6 @@ export default function ImportEntryDemo() {
     },
   });
 
-  // WATCH FOR CALCULATIONS
   const bags = form.watch("bags_qty");
   const weight = form.watch("weight_per_bag");
   const rate = form.watch("rate_per_kg");
@@ -53,37 +56,84 @@ export default function ImportEntryDemo() {
   const totalWeight = bags * weight;
   const amount = totalWeight * rate;
 
-  /** Generate Next Invoice No */
+  useEffect(() => {
+    loadAccounts();
+    loadEntries();
+    loadInvoiceNo();
+  }, []);
+
+  const openInvoice = (entry: any, type: "import" | "export") => {
+    const payload = {
+      ...entry,
+      type,
+    };
+
+    localStorage.setItem("invoiceData", JSON.stringify(payload));
+    window.open("/invoice-preview", "_blank");
+  };
+
+
+
+  const loadInvoiceNo = async () => {
+    const last = await getLastInvoiceNo();
+
+    const prefix = "IMP";
+    const num = parseInt(last.replace(prefix, ""), 10) + 1;
+
+    const next = prefix + String(num).padStart(3, "0");
+
+    setInvoiceNo(next);
+  };
+
+
+  const loadAccounts = async () => {
+    try {
+      const list = await fetchAccounts();
+      setAccounts(list);
+    } catch (e) {
+      console.error("Error loading accounts", e);
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  const loadEntries = async () => {
+    const res = await fetchImportEntries();
+    setEntries(res);
+  };
+
   const generateNextInvoiceNo = () => {
     setInvoiceNo((prev) => {
       const prefix = "IMP";
-      const num = parseInt(prev.replace(prefix, ""), 10) + 1;
-      return `${prefix}${String(num).padStart(3, "0")}`;
+      const number = parseInt(prev.replace(prefix, ""), 10) + 1;
+      return `${prefix}${String(number).padStart(3, "0")}`;
     });
   };
 
-  /** Save new Import Entry */
-  const saveEntry = (data: any) => {
-    const newEntry: ImportEntry = {
-      id: Date.now().toString(),
-      invoice_no: invoiceNo,
-      account: data.account,
+  const saveEntry = async (data: any) => {
+    const payload = {
+      account_id: data.account_id,
+      account_name: data.account_name,
       supplier: data.supplier,
       bags_qty: data.bags_qty,
       weight_per_bag: data.weight_per_bag,
       rate_per_kg: data.rate_per_kg,
       total_weight: totalWeight,
-      amount,
+      amount: amount,
       vehicle_numbers: data.vehicle_numbers,
       grn_no: data.grn_no,
       entry_date: data.entry_date,
+      invoice_no: invoiceNo,
     };
 
-    setEntries((prev) => [newEntry, ...prev]);
+    await createImportEntry(payload);
+
     generateNextInvoiceNo();
+    loadEntries();
 
     form.reset({
-      account: "",
+      account_id: "",
+      account_name: "",
       supplier: "",
       bags_qty: 0,
       weight_per_bag: 0,
@@ -94,17 +144,11 @@ export default function ImportEntryDemo() {
     });
   };
 
-  /** Delete import entry */
-  const deleteEntry = (id: string) => {
-    if (!confirm("Delete this entry?")) return;
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-  };
-
-  /** Load row values into form */
-  const handleEdit = (entry: ImportEntry) => {
+  const handleEdit = (entry: any) => {
     setEditingId(entry.id);
 
-    form.setValue("account", entry.account);
+    form.setValue("account_id", entry.account_id);
+    form.setValue("account_name", entry.account_name);
     form.setValue("supplier", entry.supplier);
     form.setValue("bags_qty", entry.bags_qty);
     form.setValue("weight_per_bag", entry.weight_per_bag);
@@ -114,32 +158,29 @@ export default function ImportEntryDemo() {
     form.setValue("entry_date", entry.entry_date);
   };
 
-  /** Update entry */
-  const updateEntry = (id: string, data: any) => {
-    setEntries((prev) =>
-      prev.map((entry) =>
-        entry.id === id
-          ? {
-              ...entry,
-              account: data.account,
-              supplier: data.supplier,
-              bags_qty: data.bags_qty,
-              weight_per_bag: data.weight_per_bag,
-              rate_per_kg: data.rate_per_kg,
-              vehicle_numbers: data.vehicle_numbers,
-              grn_no: data.grn_no,
-              entry_date: data.entry_date,
-              total_weight: data.bags_qty * data.weight_per_bag,
-              amount: data.bags_qty * data.weight_per_bag * data.rate_per_kg,
-            }
-          : entry
-      )
-    );
+  const updateEntry = async (id: string, data: any) => {
+    const payload = {
+      account_id: data.account_id,
+      account_name: data.account_name,
+      supplier: data.supplier,
+      bags_qty: data.bags_qty,
+      weight_per_bag: data.weight_per_bag,
+      rate_per_kg: data.rate_per_kg,
+      total_weight: data.bags_qty * data.weight_per_bag,
+      amount: data.bags_qty * data.weight_per_bag * data.rate_per_kg,
+      vehicle_numbers: data.vehicle_numbers,
+      grn_no: data.grn_no,
+      entry_date: data.entry_date,
+    };
+
+    await updateImportEntryById(id, payload);
 
     setEditingId(null);
+    loadEntries();
 
     form.reset({
-      account: "",
+      account_id: "",
+      account_name: "",
       supplier: "",
       bags_qty: 0,
       weight_per_bag: 0,
@@ -150,12 +191,18 @@ export default function ImportEntryDemo() {
     });
   };
 
-  /** Filter Search */
-  const filtered = entries.filter((e) =>
-    e.account.toLowerCase().includes(search.toLowerCase()) ||
-    e.supplier.toLowerCase().includes(search.toLowerCase()) ||
-    e.vehicle_numbers.toLowerCase().includes(search.toLowerCase()) ||
-    e.invoice_no.toLowerCase().includes(search.toLowerCase())
+  const deleteEntry = async (id: string) => {
+    if (!confirm("Delete this entry?")) return;
+    await deleteImportEntryById(id);
+    loadEntries();
+  };
+
+  const filtered = entries.filter(
+    (e) =>
+      e.account_name.toLowerCase().includes(search.toLowerCase()) ||
+      e.supplier.toLowerCase().includes(search.toLowerCase()) ||
+      e.vehicle_numbers.toLowerCase().includes(search.toLowerCase()) ||
+      e.invoice_no.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -185,17 +232,37 @@ export default function ImportEntryDemo() {
 
             <div>
               <Label>Account</Label>
-              <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                placeholder="Enter account"
-                {...form.register("account")}
-              />
+
+              <Select
+                value={form.watch("account_id")}
+                onValueChange={(id) => {
+                  const acc = accounts.find((a) => a.id === id);
+                  form.setValue("account_id", id);
+                  form.setValue("account_name", acc?.account_name || "");
+                }}
+              >
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0">
+                  <SelectValue placeholder="Select account" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {loadingAccounts ? (
+                    <div className="p-2 text-gray-500">Loading...</div>
+                  ) : (
+                    accounts.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.account_name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label>Supplier</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 placeholder="Enter supplier name"
                 {...form.register("supplier")}
               />
@@ -205,7 +272,7 @@ export default function ImportEntryDemo() {
               <Label>Bags Qty</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 {...form.register("bags_qty")}
               />
             </div>
@@ -215,7 +282,7 @@ export default function ImportEntryDemo() {
               <Input
                 type="number"
                 step="0.001"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 {...form.register("weight_per_bag")}
               />
             </div>
@@ -225,7 +292,7 @@ export default function ImportEntryDemo() {
               <Input
                 type="number"
                 step="0.01"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 {...form.register("rate_per_kg")}
               />
             </div>
@@ -234,22 +301,20 @@ export default function ImportEntryDemo() {
 
           {/* ROW 2 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
             <div className="md:col-span-2">
               <Label>Vehicle Numbers</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 placeholder="ABC-123, XYZ-555"
                 {...form.register("vehicle_numbers")}
               />
             </div>
 
-            {/* GRN + SAVE */}
             <div className="flex gap-3">
               <div className="w-1/2">
                 <Label>GRN No</Label>
                 <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                   {...form.register("grn_no")}
                 />
               </div>
@@ -269,7 +334,6 @@ export default function ImportEntryDemo() {
             </div>
           </div>
 
-          {/* CALC BOX */}
           <div className="p-3 bg-white rounded border border-gray-500">
             <div className="flex justify-between font-semibold">
               <span>Total Weight:</span>
@@ -295,13 +359,13 @@ export default function ImportEntryDemo() {
               <Input
                 type="text"
                 placeholder="Search entries..."
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black focus:outline-none"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={loadEntries}>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -310,7 +374,6 @@ export default function ImportEntryDemo() {
         <CardContent className="p-0">
           <div className="max-h-[500px] overflow-y-auto">
             <Table className="w-full text-sm">
-
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b border-gray-300">
                   <TableHead className="border-r w-24">Invoice#</TableHead>
@@ -327,26 +390,45 @@ export default function ImportEntryDemo() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                    <TableCell
+                      colSpan={8}
+                      className="text-center py-6 text-gray-500"
+                    >
                       No records found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filtered.map((entry) => (
-                    <TableRow key={entry.id} className="border-b hover:bg-gray-50">
+                    <TableRow
+                      key={entry.id}
+                      className="border-b hover:bg-gray-50"
+                    >
                       <TableCell>{entry.invoice_no}</TableCell>
-                      <TableCell>{format(new Date(entry.entry_date), "dd/MM/yy")}</TableCell>
-                      <TableCell>{entry.account}</TableCell>
+                      <TableCell>
+                        {entry.entry_date
+                          ? format(
+                              entry.entry_date.toDate
+                                ? entry.entry_date.toDate()
+                                : new Date(entry.entry_date),
+                              "dd/MM/yy"
+                            )
+                          : "-"}
+                      </TableCell>
+
+                      <TableCell>{entry.account_name}</TableCell>
                       <TableCell>{entry.supplier}</TableCell>
                       <TableCell className="text-right">{entry.bags_qty}</TableCell>
-                      <TableCell className="text-right">{entry.total_weight.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{entry.amount.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        {entry.total_weight.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {entry.amount.toLocaleString()}
+                      </TableCell>
 
                       <TableCell className="text-center flex gap-2 justify-center">
-
                         <Button
                           size="sm"
-                          className="bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                          className="bg-[#0A2A43] text-white font-semibold"
                           onClick={() => handleEdit(entry)}
                         >
                           <Pencil size={14} />
@@ -361,12 +443,19 @@ export default function ImportEntryDemo() {
                           <Trash2 size={16} />
                         </Button>
 
+                        <Button
+                          size="sm"
+                          className="bg-blue-700 text-white"
+                          onClick={() => openInvoice(entry, "import")}
+                        >
+                          Print
+                        </Button>
+
                       </TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
-
             </Table>
           </div>
         </CardContent>

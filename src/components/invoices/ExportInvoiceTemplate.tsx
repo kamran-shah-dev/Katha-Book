@@ -40,22 +40,30 @@ export default function ExportInvoiceTemplate({ entry }) {
           <tbody>
             <tr>
               <td>Invoice No: {entry.invoice_no}</td>
-              <td style={{ textAlign: "center" }}><b>Export Invoice</b></td>
-              <td>GD No: {entry.gd_no}</td>
+
+              <td style={{ textAlign: "center" }}>
+                <b>{entry.type === "import" ? "Import Invoice" : "Export Invoice"}</b>
+              </td>
+
+              <td>
+                {entry.grn_no ? `GRN No: ${entry.grn_no}` : `GD No: ${entry.gd_no}`}
+              </td>
             </tr>
+
             <tr>
-              <td>M/S: {entry.account}</td>
+              <td>M/S: {entry.account_name || entry.account}</td>
               <td></td>
               <td>Date: {entry.entry_date}</td>
             </tr>
           </tbody>
         </table>
 
+
         <table className="product-table">
           <thead>
             <tr>
               <th>S.No</th>
-              <th>Products</th>
+              <th>{entry.type === "import" ? "Supplier" : "Product"}</th>
               <th>Bags Qty</th>
               <th>Weight Per Bag</th>
               <th>Total Weight</th>
@@ -67,7 +75,10 @@ export default function ExportInvoiceTemplate({ entry }) {
           <tbody>
             <tr>
               <td>01</td>
-              <td>{entry.product}</td>
+              <td>
+                {entry.type === "import" ? entry.supplier : entry.product}
+              </td>
+
               <td>{entry.bags_qty}</td>
               <td>{entry.weight_per_bag}</td>
               <td>{entry.total_weight}</td>

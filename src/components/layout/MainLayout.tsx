@@ -40,7 +40,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         { name: "Cashbook Report", path: "/reports/cashbook" },
         { name: "Account Ledger", path: "/reports/ledger" },
         { name: "Credit & Debit Report", path: "/reports/credit-debit" },
-        { name: "Parties Report", path: "/reports/parties" },
+        { name: "Parties Report", path: "/reports/parties" }
       ],
     },
 
@@ -149,8 +149,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         <main className="flex-1 p-6 bg-background overflow-auto">
           {children}
-
-          
         </main>
 
         {/* FOOTER */}

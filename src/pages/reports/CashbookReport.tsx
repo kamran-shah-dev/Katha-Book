@@ -1,97 +1,180 @@
-import { useState, useRef } from 'react';
-import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useRef } from "react";
+import { format } from "date-fns";
+import { db } from "@/firebaseConfig";
+import "@/pages/reports/reports.css";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Printer, Search } from 'lucide-react';
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs
+} from "firebase/firestore";
 
-interface CashbookRow {
-  date: string;
-  account_name: string;
-  detail: string;
-  credit: number;
-  debit: number;
-}
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, Printer } from "lucide-react";
 
 export default function CashbookReport() {
-  const [fromDate, setFromDate] = useState(format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd'));
-  const [toDate, setToDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [rows, setRows] = useState<CashbookRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccount, setSelectedAccount] = useState("");
+  const [rows, setRows] = useState([]);
+
+  const [fromDate, setFromDate] = useState(
+    format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd")
+  );
+  const [toDate, setToDate] = useState(format(new Date(), "yyyy-MM-dd"));
+
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Load Accounts
+  useEffect(() => {
+    const loadAccounts = async () => {
+      const snap = await getDocs(collection(db, "accounts"));
+      setAccounts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    };
+
+    loadAccounts();
+  }, []);
+
+  // Generate Report
   const generateReport = async () => {
-    setLoading(true);
-    try {
-      const { data } = await supabase
-        .from('cashbook_entries')
-        .select('*, accounts(account_name)')
-        .eq('is_deleted', false)
-        .gte('entry_date', fromDate)
-        .lte('entry_date', toDate)
-        .order('entry_date')
-        .order('created_at');
+    if (!selectedAccount) return alert("Select an account!");
 
-      const reportRows: CashbookRow[] = (data || []).map(entry => ({
-        date: entry.entry_date,
-        account_name: entry.accounts?.account_name || '-',
-        detail: entry.payment_detail || '-',
-        credit: entry.pay_status === 'CREDIT' ? Number(entry.amount) : 0,
-        debit: entry.pay_status === 'DEBIT' ? Number(entry.amount) : 0,
-      }));
+    const q = query(
+      collection(db, "cashbook_entries"),
+      where("account_id", "==", selectedAccount),
+      where("date", ">=", new Date(fromDate)),
+      where("date", "<=", new Date(toDate)),
+      orderBy("date", "asc"),
+      orderBy("created_at", "asc")
+    );
 
-      setRows(reportRows);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const snap = await getDocs(q);
 
-  const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
+    const list = snap.docs.map((doc) => {
+      const entry = doc.data();
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+      return {
+        date: entry.date.toDate(),
+        detail: entry.payment_details || "-",
+        credit: entry.type === "CREDIT" ? entry.amount : 0,
+        debit: entry.type === "DEBIT" ? entry.amount : 0
+      };
+    });
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Cashbook Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-            h1 { text-align: center; }
-            .period { text-align: center; color: #666; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 6px; }
-            th { background: #f5f5f5; }
-            .text-right { text-align: right; }
-          </style>
-        </head>
-        <body>
-          <h1>Cashbook Report</h1>
-          <p class="period">${format(new Date(fromDate), 'dd/MM/yyyy')} to ${format(new Date(toDate), 'dd/MM/yyyy')}</p>
-          ${printContent.innerHTML}
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
+    setRows(list);
   };
 
   const totalCredit = rows.reduce((sum, r) => sum + r.credit, 0);
   const totalDebit = rows.reduce((sum, r) => sum + r.debit, 0);
+  const balance = totalCredit - totalDebit;
+
+  // PRINT BEAUTIFUL TEMPLATE
+  const handlePrint = () => {
+    if (!printRef.current) return;
+
+    const win = window.open("", "_blank");
+
+    win.document.write(`
+      <html>
+      <head>
+        <title>Cashbook Report</title>
+        <style>
+
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    padding: 40px;
+    color: #222;
+  }
+
+  .header-title {
+    font-size: 24px;
+    font-weight: 700;
+    border-bottom: 3px solid #3f51b5;
+    display: inline-block;
+    padding-bottom: 4px;
+    margin-bottom: 5px;
+  }
+
+  .sub-title {
+    font-size: 18px;
+    margin-top: 3px;
+    font-weight: 600;
+  }
+
+  .period {
+    text-align: right;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 15px;
+  }
+
+  table.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+
+  table.report-table th {
+    background: #eef2ff;
+    padding: 10px 8px;
+    border: 1px solid #cdd4e1;
+    font-weight: 600;
+  }
+
+  table.report-table td {
+    border: 1px solid #e3e6eb;
+    padding: 8px;
+    vertical-align: top;
+  }
+
+  .right {
+    text-align: right;
+    padding-right: 10px;
+  }
+
+  .footer-box {
+    margin-top: 25px;
+    padding: 12px;
+    border: 1px solid #d0d7e2;
+    width: 260px;
+    float: right;
+    background: #fafbff;
+    border-radius: 6px;
+  }
+
+  .footer-box div {
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+
+</style>
+
+      </head>
+      <body>
+
+        <h1>Cashbook Report</h1>
+        <div class="sub">${accounts.find(a => a.id === selectedAccount)?.account_name}</div>
+        <div class="period">${format(new Date(fromDate), "dd MMM yyyy")} - ${format(new Date(toDate), "dd MMM yyyy")}</div>
+
+        ${printRef.current.innerHTML}
+
+        <div class="footer">
+          Total Credit: Rs. ${totalCredit.toLocaleString()} <br/>
+          Total Debit: Rs. ${totalDebit.toLocaleString()} <br/>
+          Cash In Hand: Rs. ${balance.toLocaleString()}
+        </div>
+
+      </body>
+      </html>
+    `);
+
+    win.document.close();
+    win.print();
+  };
 
   return (
     <div className="space-y-4">
@@ -99,69 +182,98 @@ export default function CashbookReport() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="space-y-1">
-              <Label>From Date</Label>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+            {/* Account Select */}
+            <div>
+              <Label>Account</Label>
+              <select
+                className="h-10 border rounded px-2 w-full"
+                value={selectedAccount}
+                onChange={(e) => setSelectedAccount(e.target.value)}
+              >
+                <option value="">Select Account</option>
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.account_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Filters */}
+            <div>
+              <Label>From</Label>
               <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
             </div>
-            <div className="space-y-1">
-              <Label>To Date</Label>
+
+            <div>
+              <Label>To</Label>
               <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
             </div>
-            <div className="flex items-end gap-2 md:col-span-2">
-              <Button onClick={generateReport} disabled={loading}>
-                <Search className="h-4 w-4 mr-1" /> {loading ? 'Loading...' : 'Generate'}
+
+            {/* Generate + Print */}
+            <div className="flex items-end gap-2">
+              <Button onClick={generateReport}>
+                <Search className="w-4 h-4 mr-2" /> Generate
               </Button>
+
               {rows.length > 0 && (
                 <Button variant="outline" onClick={handlePrint}>
-                  <Printer className="h-4 w-4 mr-1" /> Print
+                  <Printer className="w-4 h-4 mr-2" /> Print
                 </Button>
               )}
             </div>
+
           </div>
         </CardContent>
       </Card>
 
+      {/* TABLE PREVIEW */}
       {rows.length > 0 && (
-        <Card>
-          <CardHeader className="py-3"><CardTitle className="text-lg">Cashbook Entries</CardTitle></CardHeader>
-          <CardContent className="p-0" ref={printRef}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Account</TableHead>
-                  <TableHead>Detail</TableHead>
-                  <TableHead className="text-right">Credit</TableHead>
-                  <TableHead className="text-right">Debit</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{format(new Date(row.date), 'dd/MM/yyyy')}</TableCell>
-                    <TableCell className="font-medium">{row.account_name}</TableCell>
-                    <TableCell>{row.detail}</TableCell>
-                    <TableCell className="text-right text-green-600">{row.credit > 0 ? row.credit.toLocaleString() : '-'}</TableCell>
-                    <TableCell className="text-right text-red-600">{row.debit > 0 ? row.debit.toLocaleString() : '-'}</TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="bg-muted font-bold">
-                  <TableCell colSpan={3}>Total</TableCell>
-                  <TableCell className="text-right text-green-600">{totalCredit.toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-red-600">{totalDebit.toLocaleString()}</TableCell>
-                </TableRow>
-                <TableRow className="bg-primary/10 font-bold">
-                  <TableCell colSpan={3}>Net Cash Flow</TableCell>
-                  <TableCell colSpan={2} className={`text-right ${totalCredit - totalDebit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    Rs. {Math.abs(totalCredit - totalDebit).toLocaleString()} {totalCredit - totalDebit >= 0 ? '(In)' : '(Out)'}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="report-container" ref={printRef}>
+          
+          <div className="report-header">Cashbook Report</div>
+          <div className="report-subtitle">
+            {accounts.find((a) => a.id === selectedAccount)?.account_name}
+          </div>
+          <div className="report-period">
+            {format(new Date(fromDate), "dd MMM yyyy")} - {format(new Date(toDate), "dd MMM yyyy")}
+          </div>
+
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Transaction Details</th>
+                <th className="right">Cash Received</th>
+                <th className="right">Cash Paid</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td>{format(r.date, "dd MMM yyyy")}</td>
+                  <td>{r.detail}</td>
+                  <td className="right">{r.credit ? "Rs. " + r.credit.toLocaleString() : ""}</td>
+                  <td className="right">{r.debit ? "Rs. " + r.debit.toLocaleString() : ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="report-summary">
+            Total Credit: Rs. {totalCredit.toLocaleString()} <br />
+            Total Debit: Rs. {totalDebit.toLocaleString()} <br />
+            Cash In Hand: Rs. {balance.toLocaleString()}
+          </div>
+
+        </div>
       )}
+
+
     </div>
   );
 }
