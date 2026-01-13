@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import{createCashEntry , deleteCashEntry, fetchCashEntries, updateCashEntry } from '@/services/cashbook.services'
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -44,7 +45,7 @@ export default function CashbookEntry() {
 
   const [entries, setEntries] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const form = useForm({
     resolver: zodResolver(cashbookSchema),
@@ -66,48 +67,50 @@ export default function CashbookEntry() {
 
 
   // SAVE NEW ENTRY
-  const saveEntry = (data: any) => {
-    if (editingId !== null) {
-      updateEntry(editingId, data);
-      return;
+  const saveEntry = async (data: any) => {
+    try {
+      if (editingId) {
+        await updateCashEntry(editingId, data);
+      } else {
+        await createCashEntry(data);
+      }
+
+      await loadEntries();
+      setEditingId(null);
+      form.reset();
+    } catch (err) {
+      console.error("Error saving entry:", err);
     }
-
-    const newEntry = {
-      id: Date.now(),
-      ...data,
-    };
-
-    setEntries([newEntry, ...entries]);
-
-    form.reset({
-      account_name: "",
-      payment_detail: "",
-      pay_status: "DEBIT",
-      amount: 0,
-      entry_date: new Date().toISOString().split("T")[0],
-      remarks: "",
-    });
   };
+
+  const loadEntries = async () => {
+    const list = await fetchCashEntries();
+    setEntries(list);
+  };
+
 
 
   // DELETE ENTRY
-  const deleteEntry = (id: number) => {
-    if (!confirm("Remove this entry?")) return;
-    setEntries(entries.filter((e) => e.id !== id));
-  };
+const deleteEntry = async (id: string) => {
+  if (!confirm("Remove this entry?")) return;
+
+  await deleteCashEntry(id);
+  loadEntries();
+};
 
 
   // LOAD ENTRY INTO FORM FOR EDITING
   const handleEdit = (entry: any) => {
-    setEditingId(entry.id);
+  setEditingId(entry.id);
 
-    form.setValue("account_name", entry.account_name);
-    form.setValue("payment_detail", entry.payment_detail || "");
-    form.setValue("pay_status", entry.pay_status);
-    form.setValue("amount", entry.amount);
-    form.setValue("entry_date", entry.entry_date);
-    form.setValue("remarks", entry.remarks || "");
-  };
+  form.setValue("account_name", entry.account_name);
+  form.setValue("payment_detail", entry.payment_details || "");
+  form.setValue("pay_status", entry.type);
+  form.setValue("amount", entry.amount);
+  form.setValue("entry_date", entry.date.toDate().toISOString().split("T")[0]);
+  form.setValue("remarks", entry.remarks || "");
+};
+
 
 
   // UPDATE EXISTING ENTRY
