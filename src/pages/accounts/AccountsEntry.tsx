@@ -1,7 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
+import {
+  createAccount,
+  updateAccount as updateAccountService,
+  deleteAccount as deleteAccountService,
+  fetchAccounts,
+  searchAccounts
+} from "@/services/accounts.services";
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +58,7 @@ const accountSchema = z.object({
 
 type AccountFormData = z.infer<typeof accountSchema>;
 
+
 const subHeadOptions = [
   { value: "BANKS", label: "BANKS" },
   { value: "DOLLAR_LEDGERS", label: "DOLLAR LEDGERS" },
@@ -62,22 +71,21 @@ const subHeadOptions = [
 
 export default function AccountsEntry() {
 
-  const [accounts, setAccounts] = useState<any[]>([
-    {
-      id: "demo1",
-      account_name: "Pak Traders",
-      sub_head: "EXPORT_PARTIES",
-      balance_status: "DEBIT",
-      opening_balance: 150000,
-      cell_no: "03123456789",
-      ntn_number: "1234567",
-      address: "Custom House Karachi",
-      is_active: true
-    }
-  ]);
-
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+
+
+  // Load Accounts from Firestore
+  const loadAccounts = async () => {
+    const data = await fetchAccounts();
+    setAccounts(data);
+  };
+
+  useEffect(() => {
+    loadAccounts();
+  }, []);
+
 
   const form = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
@@ -93,29 +101,35 @@ export default function AccountsEntry() {
     },
   });
 
-  // -------------------------------------
-  // SAVE NEW ACCOUNT
-  // -------------------------------------
-  const onSubmit = (data: AccountFormData) => {
-    if (editingId) return updateAccount(editingId, data);
 
-    const newData = {
-      ...data,
-      id: crypto.randomUUID(),
-      created_at: new Date().toISOString()
-    };
+  // -------------------------------------
+  // SAVE OR UPDATE ACCOUNT
+  // -------------------------------------
+  const onSubmit = async (data: AccountFormData) => {
+    try {
+      if (editingId) {
+        await updateAccountService(editingId, data);
+      } else {
+        await createAccount(data);
+      }
 
-    setAccounts(prev => [...prev, newData]);
-    form.reset();
+      form.reset();
+      setEditingId(null);
+      loadAccounts();
+    } catch (error) {
+      console.error("Error saving account:", error);
+    }
   };
 
 
   // -------------------------------------
   // DELETE ACCOUNT
   // -------------------------------------
-  const deleteAccount = (id: string) => {
+  const deleteAccount = async (id: string) => {
     if (!confirm("Delete this account?")) return;
-    setAccounts(prev => prev.filter(acc => acc.id !== id));
+
+    await deleteAccountService(id);
+    loadAccounts();
   };
 
 
@@ -137,27 +151,19 @@ export default function AccountsEntry() {
 
 
   // -------------------------------------
-  // UPDATE ACCOUNT
+  // SEARCH ACCOUNTS IN FIRESTORE
   // -------------------------------------
-  const updateAccount = (id: string, data: AccountFormData) => {
-    setAccounts(prev =>
-      prev.map(acc =>
-        acc.id === id ? { ...acc, ...data } : acc
-      )
-    );
+  const handleSearch = async (value: string) => {
+    setSearch(value);
 
-    setEditingId(null);
-    form.reset();
+    if (value.trim().length === 0) {
+      loadAccounts();
+      return;
+    }
+
+    const results = await searchAccounts(value);
+    setAccounts(results);
   };
-
-
-  // -------------------------------------
-  // FILTER SEARCH
-  // -------------------------------------
-  const filtered = accounts.filter(acc =>
-    acc.account_name.toLowerCase().includes(search.toLowerCase()) ||
-    acc.cell_no.includes(search)
-  );
 
 
   return (
@@ -189,9 +195,9 @@ export default function AccountsEntry() {
               <Label>Head *</Label>
               <Select
                 value={form.watch("sub_head")}
-                onValueChange={(v) => form.setValue("sub_head", v)}
+                onValueChange={(v) => form.setValue("sub_head", v as AccountFormData["sub_head"])}
               >
-                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+                <SelectTrigger className="h-9 border-2 border-black">
                   <SelectValue placeholder="Select head" />
                 </SelectTrigger>
                 <SelectContent>
@@ -206,9 +212,9 @@ export default function AccountsEntry() {
               <Label>Type *</Label>
               <Select
                 value={form.watch("balance_status")}
-                onValueChange={(v) => form.setValue("balance_status", v)}
+                onValueChange={(v) => form.setValue("balance_status", v as "CREDIT" | "DEBIT")}
               >
-                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+                <SelectTrigger className="h-9 border-2 border-black">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -261,7 +267,7 @@ export default function AccountsEntry() {
                 value={form.watch("is_active") ? "true" : "false"}
                 onValueChange={(v) => form.setValue("is_active", v === "true")}
               >
-                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+                <SelectTrigger className="h-9 border-2 border-black">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -275,7 +281,7 @@ export default function AccountsEntry() {
               <Label>Address</Label>
               <Input
                 placeholder="Enter address"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-offset-0 focus-visible:ring-0"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("address")}
               />
             </div>
@@ -299,23 +305,24 @@ export default function AccountsEntry() {
         <CardHeader className="py-2 px-4">
           <div className="flex justify-between items-center">
 
-            {/* LEFT SIDE: Title + Search */}
+            {/* Title + Search */}
             <div className="flex items-center gap-4">
               <CardTitle className="text-xl font-bold">Account List</CardTitle>
 
               <Input
                 type="text"
                 placeholder="Search accounts..."
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-9 border-2 border-black"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
 
-            {/* RIGHT SIDE: Refresh */}
-            <Button variant="outline" size="sm" onClick={() => setSearch("")}>
+            {/* Refresh */}
+            <Button variant="outline" size="sm" onClick={() => loadAccounts()}>
               <RefreshCw className="h-4 w-4" />
             </Button>
+
           </div>
         </CardHeader>
 
@@ -335,14 +342,14 @@ export default function AccountsEntry() {
               </TableHeader>
 
               <TableBody>
-                {filtered.length === 0 ? (
+                {accounts.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-6 text-gray-500">
                       No accounts found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((acc) => (
+                  accounts.map((acc: any) => (
                     <TableRow key={acc.id} className="border-b hover:bg-gray-50">
 
                       <TableCell className="border-r">{acc.account_name}</TableCell>
@@ -388,7 +395,6 @@ export default function AccountsEntry() {
           </div>
         </CardContent>
       </Card>
-
 
     </div>
   );
