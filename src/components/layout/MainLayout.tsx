@@ -39,18 +39,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
       children: [
         { name: "Cashbook Report", path: "/reports/cashbook" },
         { name: "Account Ledger", path: "/reports/ledger" },
-        { name: "Credit & Debit Report", path: "/reports/credit-debit" },
-        { name: "Parties Report", path: "/reports/parties" }
+        { name: "Credit & Debit Report", path: "/reports/credit-debit" }
+        // { name: "Parties Report", path: "/reports/parties" }
       ],
     },
 
-    {
-      name: "Utility",
-      icon: Wrench,
-      toggle: () => setOpenUtility(!openUtility),
-      open: openUtility,
-      children: [{ name: "Data Import", path: "/utility/import" }],
-    },
+    // {
+    //   name: "Utility",
+    //   icon: Wrench,
+    //   toggle: () => setOpenUtility(!openUtility),
+    //   open: openUtility,
+    //   children: [{ name: "Data Import", path: "/utility/import" }],
+    // },
   ];
 
   return (
