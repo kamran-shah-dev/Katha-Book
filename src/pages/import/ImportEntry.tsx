@@ -260,7 +260,7 @@ export default function ImportEntryPage() {
             </div>
 
             <div>
-              <Label>Supplier</Label>
+              <Label>Product</Label>
               <Input
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0"
                 placeholder="Enter supplier name"
