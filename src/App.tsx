@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainLayout from "@/components/layout/MainLayout";
-import InvoicePreview from "@/pages/invoice/InvoicePreview";
+import InvoicePreview from "@/pages/invoice/invoice-preview";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AccountsEntry from "./pages/accounts/AccountsEntry";
