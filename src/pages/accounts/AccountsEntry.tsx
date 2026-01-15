@@ -7,7 +7,7 @@ import {
   createAccount,
   updateAccount as updateAccountService,
   deleteAccount as deleteAccountService,
-  fetchAccounts,
+  listenAccounts,
   searchAccounts
 } from "@/services/accounts.services";
 
@@ -76,15 +76,11 @@ export default function AccountsEntry() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
 
-  // Load Accounts from Firestore
-  const loadAccounts = async () => {
-    const data = await fetchAccounts();
-    setAccounts(data);
-  };
+ useEffect(() => {
+  const unsubscribe = listenAccounts(setAccounts);
+  return () => unsubscribe();
+}, []);
 
-  useEffect(() => {
-    loadAccounts();
-  }, []);
 
 
   const form = useForm<AccountFormData>({
@@ -115,7 +111,6 @@ export default function AccountsEntry() {
 
       form.reset();
       setEditingId(null);
-      loadAccounts();
     } catch (error) {
       console.error("Error saving account:", error);
     }
@@ -129,7 +124,6 @@ export default function AccountsEntry() {
     if (!confirm("Delete this account?")) return;
 
     await deleteAccountService(id);
-    loadAccounts();
   };
 
 
@@ -157,7 +151,6 @@ export default function AccountsEntry() {
     setSearch(value);
 
     if (value.trim().length === 0) {
-      loadAccounts();
       return;
     }
 
@@ -319,7 +312,7 @@ export default function AccountsEntry() {
             </div>
 
             {/* Refresh */}
-            <Button variant="outline" size="sm" onClick={() => loadAccounts()} className="w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={() => setSearch("")} className="w-full sm:w-auto">
               <RefreshCw className="h-4 w-4" />
             </Button>
 

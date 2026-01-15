@@ -17,7 +17,7 @@ import {
   getLastExportInvoiceNo
 } from "@/services/export.services";
 
-import { fetchAccounts } from "@/services/accounts.services";
+import { listenAccounts } from "@/services/accounts.services";
 
 import {
   Select,
@@ -56,7 +56,7 @@ export default function ExportEntryPage() {
   const amount = totalWeight * rate;
 
   useEffect(() => {
-    loadAccounts();
+    const unsub = listenAccounts(setAccounts);
     loadEntries();
     loadInvoiceNo();
   }, []);
@@ -72,10 +72,7 @@ export default function ExportEntryPage() {
   };
 
 
-  const loadAccounts = async () => {
-    const res = await fetchAccounts();
-    setAccounts(res);
-  };
+
 
   const loadEntries = async () => {
     const res = await fetchExportEntries();

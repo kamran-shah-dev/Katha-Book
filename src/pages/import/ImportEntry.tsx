@@ -17,7 +17,7 @@ import {
   getLastInvoiceNo
 } from "@/services/import.services";
 
-import { fetchAccounts } from "@/services/accounts.services";
+import { listenAccounts, } from "@/services/accounts.services";
 
 import {
   Select,
@@ -57,10 +57,17 @@ export default function ImportEntryPage() {
   const amount = totalWeight * rate;
 
   useEffect(() => {
-    loadAccounts();
+    const unsubscribe = listenAccounts((list) => {
+        setAccounts(list);
+        setLoadingAccounts(false);
+    });
+
     loadEntries();
     loadInvoiceNo();
-  }, []);
+
+    return () => unsubscribe();
+}, []);
+
 
   const openInvoice = (entry: any, type: "import" | "export") => {
     const payload = {
@@ -83,18 +90,6 @@ export default function ImportEntryPage() {
     const next = prefix + String(num).padStart(3, "0");
 
     setInvoiceNo(next);
-  };
-
-
-  const loadAccounts = async () => {
-    try {
-      const list = await fetchAccounts();
-      setAccounts(list);
-    } catch (e) {
-      console.error("Error loading accounts", e);
-    } finally {
-      setLoadingAccounts(false);
-    }
   };
 
   const loadEntries = async () => {

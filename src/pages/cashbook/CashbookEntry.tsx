@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { createCashEntry, deleteCashEntry, fetchCashEntries, updateCashEntry } from "@/services/cashbook.services";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { fetchAccounts } from "@/services/accounts.services";
+import { listenAccounts } from "@/services/accounts.services";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -62,21 +62,17 @@ export default function CashbookEntry() {
       : total - Number(e.amount);
   }, 0);
 
-  const loadAccounts = async () => {
-    try {
-      const list = await fetchAccounts();
-      setAccounts(list);
-    } catch (err) {
-      console.error("Error loading accounts:", err);
-    } finally {
-      setLoadingAccounts(false);
-    }
-  };
+useEffect(() => {
+  const unsubscribe = listenAccounts((list) => {
+    setAccounts(list);
+    setLoadingAccounts(false);
+  });
 
-  useEffect(() => {
-    loadAccounts();
-    loadEntries();
-  }, []);
+  loadEntries(); // still needed for cash entries
+
+  return () => unsubscribe();
+}, []);
+
 
   const loadEntries = async () => {
     const list = await fetchCashEntries();
