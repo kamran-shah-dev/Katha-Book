@@ -33,6 +33,7 @@ export default function Dashboard() {
     inactiveAccounts: 0,
   });
 
+
   useEffect(() => {
     loadTotals();
   }, []);
@@ -49,7 +50,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold ml-2 md:ml-6">Dashboard Overview</h1>
 
         <button
           onClick={loadTotals}

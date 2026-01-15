@@ -167,23 +167,23 @@ export default function AccountsEntry() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-2 sm:px-0">
 
       {/* FORM */}
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
-        <CardHeader className="py-2 px-4">
-          <CardTitle className="text-xl font-bold">
+        <CardHeader className="py-2 px-3 sm:px-4">
+          <CardTitle className="text-lg sm:text-xl font-bold">
             {editingId ? "Update Account" : "Create Account"}
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
+        <CardContent className="bg-gray-300 py-3 sm:py-4 px-3 sm:px-4 space-y-3">
 
           {/* ROW 1 */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
 
             <div>
-              <Label>Account Name *</Label>
+              <Label className="text-sm">Account Name *</Label>
               <Input
                 placeholder="Enter account name"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -192,7 +192,7 @@ export default function AccountsEntry() {
             </div>
 
             <div>
-              <Label>Head *</Label>
+              <Label className="text-sm">Head *</Label>
               <Select
                 value={form.watch("sub_head")}
                 onValueChange={(v) => form.setValue("sub_head", v as AccountFormData["sub_head"])}
@@ -209,7 +209,7 @@ export default function AccountsEntry() {
             </div>
 
             <div>
-              <Label>Type *</Label>
+              <Label className="text-sm">Type *</Label>
               <Select
                 value={form.watch("balance_status")}
                 onValueChange={(v) => form.setValue("balance_status", v as "CREDIT" | "DEBIT")}
@@ -225,7 +225,7 @@ export default function AccountsEntry() {
             </div>
 
             <div>
-              <Label>Opening Balance *</Label>
+              <Label className="text-sm">Opening Balance *</Label>
               <Input
                 type="number"
                 placeholder="0"
@@ -235,7 +235,7 @@ export default function AccountsEntry() {
             </div>
 
             <div>
-              <Label>Cell No *</Label>
+              <Label className="text-sm">Cell No *</Label>
               <Input
                 placeholder="03123456789"
                 maxLength={11}
@@ -250,10 +250,10 @@ export default function AccountsEntry() {
           </div>
 
           {/* ROW 2 */}
-          <div className="flex flex-col md:flex-row gap-3 w-full">
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
 
-            <div className="w-[200px]">
-              <Label>NTN Number</Label>
+            <div className="w-full sm:w-[200px]">
+              <Label className="text-sm">NTN Number</Label>
               <Input
                 placeholder="Optional"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -261,8 +261,8 @@ export default function AccountsEntry() {
               />
             </div>
 
-            <div className="w-[120px]">
-              <Label>Status</Label>
+            <div className="w-full sm:w-[120px]">
+              <Label className="text-sm">Status</Label>
               <Select
                 value={form.watch("is_active") ? "true" : "false"}
                 onValueChange={(v) => form.setValue("is_active", v === "true")}
@@ -278,7 +278,7 @@ export default function AccountsEntry() {
             </div>
 
             <div className="flex-1">
-              <Label>Address</Label>
+              <Label className="text-sm">Address</Label>
               <Input
                 placeholder="Enter address"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -286,7 +286,7 @@ export default function AccountsEntry() {
               />
             </div>
 
-            <div className="flex items-end w-[200px]">
+            <div className="flex items-end w-full sm:w-[200px]">
               <Button
                 className="w-full h-10 bg-[#0A2A43] text-white font-semibold"
                 onClick={form.handleSubmit(onSubmit)}
@@ -302,24 +302,24 @@ export default function AccountsEntry() {
 
       {/* TABLE */}
       <Card className="w-full border border-gray-300 shadow-sm">
-        <CardHeader className="py-2 px-4">
-          <div className="flex justify-between items-center">
+        <CardHeader className="py-2 px-3 sm:px-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
 
             {/* Title + Search */}
-            <div className="flex items-center gap-4">
-              <CardTitle className="text-xl font-bold">Account List</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <CardTitle className="text-lg sm:text-xl font-bold">Account List</CardTitle>
 
               <Input
                 type="text"
                 placeholder="Search accounts..."
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black w-full sm:w-auto"
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
 
             {/* Refresh */}
-            <Button variant="outline" size="sm" onClick={() => loadAccounts()}>
+            <Button variant="outline" size="sm" onClick={() => loadAccounts()} className="w-full sm:w-auto">
               <RefreshCw className="h-4 w-4" />
             </Button>
 
@@ -327,17 +327,17 @@ export default function AccountsEntry() {
         </CardHeader>
 
         <CardContent className="p-0">
-          <div className="max-h-[500px] overflow-y-auto">
+          <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
             <Table className="w-full text-sm">
 
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b border-gray-300">
-                  <TableHead className="border-r w-40">Account Name</TableHead>
-                  <TableHead className="border-r w-32">Head</TableHead>
-                  <TableHead className="border-r w-28 text-right">Opening</TableHead>
-                  <TableHead className="border-r w-28 text-right">Cell</TableHead>
-                  <TableHead className="border-r w-24 text-center">Status</TableHead>
-                  <TableHead className="text-center w-28">Action</TableHead>
+                  <TableHead className="border-r w-40 min-w-[120px]">Account Name</TableHead>
+                  <TableHead className="border-r w-32 min-w-[100px] hidden sm:table-cell">Head</TableHead>
+                  <TableHead className="border-r w-28 min-w-[80px] text-right hidden md:table-cell">Opening</TableHead>
+                  <TableHead className="border-r w-28 min-w-[100px] text-right">Cell</TableHead>
+                  <TableHead className="border-r w-24 min-w-[80px] text-center hidden lg:table-cell">Status</TableHead>
+                  <TableHead className="text-center w-28 min-w-[120px]">Action</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -353,11 +353,11 @@ export default function AccountsEntry() {
                     <TableRow key={acc.id} className="border-b hover:bg-gray-50">
 
                       <TableCell className="border-r">{acc.account_name}</TableCell>
-                      <TableCell className="border-r">{acc.sub_head}</TableCell>
-                      <TableCell className="border-r text-right">{acc.opening_balance.toLocaleString()}</TableCell>
+                      <TableCell className="border-r hidden sm:table-cell">{acc.sub_head}</TableCell>
+                      <TableCell className="border-r text-right hidden md:table-cell">{acc.opening_balance.toLocaleString()}</TableCell>
                       <TableCell className="border-r text-right">{acc.cell_no}</TableCell>
 
-                      <TableCell className="border-r text-center">
+                      <TableCell className="border-r text-center hidden lg:table-cell">
                         <span
                           className={`px-2 py-1 rounded text-xs font-semibold ${
                             acc.is_active ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
@@ -367,23 +367,26 @@ export default function AccountsEntry() {
                         </span>
                       </TableCell>
 
-                      <TableCell className="text-center flex gap-2 justify-center">
-                        <Button
-                          size="sm"
-                          className="bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
-                          onClick={() => handleEdit(acc)}
-                        >
-                          <Pencil size={14} />
-                          Edit
-                        </Button>
+                      <TableCell className="text-center">
+                        <div className="flex gap-1 sm:gap-2 justify-center">
+                          <Button
+                            size="sm"
+                            className="bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28] text-xs sm:text-sm px-2 sm:px-3"
+                            onClick={() => handleEdit(acc)}
+                          >
+                            <Pencil size={14} className="sm:mr-1" />
+                            <span className="hidden sm:inline">Edit</span>
+                          </Button>
 
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteAccount(acc.id)}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="px-2 sm:px-3"
+                            onClick={() => deleteAccount(acc.id)}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
                       </TableCell>
 
                     </TableRow>
