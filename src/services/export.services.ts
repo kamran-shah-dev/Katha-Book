@@ -4,10 +4,11 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  getDocs,
+  onSnapshot,
   query,
   orderBy,
   limit,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
@@ -15,10 +16,28 @@ import { createCashEntryFromTransaction } from "./cashbook.services";
 
 const exportCollection = collection(db, "export_entries");
 
+// --------------------------------------------------
+// 🔥 REALTIME LISTENER FOR EXPORT ENTRIES
+// --------------------------------------------------
+export function listenExportEntries(callback: (entries: any[]) => void) {
+  const q = query(exportCollection, orderBy("entry_date", "desc"));
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const list = snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
+    callback(list);
+  });
+
+  return unsubscribe;
+}
+
+// --------------------------------------------------
 // 🔥 CREATE EXPORT ENTRY (WITH AUTO CASHBOOK ENTRY)
+// --------------------------------------------------
 export async function createExportEntry(data: any) {
   try {
-    // 1. CREATE EXPORT ENTRY
     const payload = {
       account_id: data.account_id || "",
       account_name: data.account_name || "",
@@ -36,15 +55,16 @@ export async function createExportEntry(data: any) {
       search_keywords: generateKeywords(data.account_name),
     };
 
-    const docRef = await addDoc(exportCollection, payload);
-    const exportId = docRef.id;
+    // 1) Add Export entry
+    const ref = await addDoc(exportCollection, payload);
+    const exportId = ref.id;
 
-    // 2. AUTO-CREATE CASHBOOK ENTRY (CREDIT - THEY OWE YOU)
+    // 2) Auto-cashbook transaction (CREDIT)
     await createCashEntryFromTransaction(
       data.account_id,
       data.account_name,
       Number(data.amount),
-      "CREDIT", // ⬅️ Export = They owe you = CREDIT
+      "CREDIT",
       "EXPORT",
       exportId,
       data.invoice_no,
@@ -58,51 +78,51 @@ export async function createExportEntry(data: any) {
   }
 }
 
-// 🔥 GENERATE SEARCH KEYWORDS
-function generateKeywords(name: string) {
-  const lower = name.toLowerCase();
-  return [lower, ...lower.split(" ")];
-}
+// --------------------------------------------------
+// 🔥 SEARCH EXPORT ENTRIES
+// --------------------------------------------------
+export async function searchExportEntries(keyword: string) {
+  const lower = keyword.toLowerCase();
 
-// 🔥 FETCH ALL ENTRIES
-export async function fetchExportEntries() {
-  const snap = await getDocs(exportCollection);
-  return snap.docs.map((d) => {
-    const data = d.data();
+  const q = query(
+    exportCollection,
+    where("search_keywords", "array-contains", lower)
+  );
 
-    return {
-      id: d.id,
-      ...data,
-      entry_date: data.entry_date?.toDate
-        ? data.entry_date.toDate().toISOString().slice(0, 10)
-        : data.entry_date || "",
-    };
+  return new Promise<any[]>((resolve) => {
+    const unsub = onSnapshot(q, (snapshot) => {
+      const results = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      resolve(results);
+      unsub();
+    });
   });
 }
 
+// --------------------------------------------------
 // 🔥 GET LAST INVOICE NUMBER
+// --------------------------------------------------
 export async function getLastExportInvoiceNo() {
   const q = query(exportCollection, orderBy("invoice_no", "desc"), limit(1));
 
-  const snap = await getDocs(q);
-
-  if (snap.empty) return "HAH000";
-
-  return snap.docs[0].data().invoice_no;
+  return new Promise<string>((resolve) => {
+    const unsub = onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) resolve("HAH000");
+      else resolve(snapshot.docs[0].data().invoice_no);
+      unsub();
+    });
+  });
 }
 
-// 🔥 UPDATE ENTRY
+// --------------------------------------------------
+// 🔥 UPDATE EXPORT ENTRY
+// --------------------------------------------------
 export async function updateExportEntry(id: string, data: any) {
-  // ⚠️ WARNING: Updating exports should also update the linked cashbook entry
-  // For now, we'll just update the export entry
-  // In production, you'd need to:
-  // 1. Find the linked cashbook entry (where reference_id = this export id)
-  // 2. Update the cashbook entry amount
-  // 3. Recalculate account balance
-
   const ref = doc(db, "export_entries", id);
 
-  await updateDoc(ref, {
+  const payload = {
     account_id: data.account_id,
     account_name: data.account_name,
     product: data.product,
@@ -115,20 +135,25 @@ export async function updateExportEntry(id: string, data: any) {
     gd_no: data.gd_no,
     entry_date: new Date(data.entry_date),
     search_keywords: generateKeywords(data.account_name),
-  });
+  };
 
+  await updateDoc(ref, payload);
   return true;
 }
 
-// 🔥 DELETE ENTRY
+// --------------------------------------------------
+// 🔥 DELETE EXPORT ENTRY
+// --------------------------------------------------
 export async function deleteExportEntry(id: string) {
-  // ⚠️ WARNING: Deleting exports should also delete the linked cashbook entry
-  // For now, simple delete
-  // In production, you'd need to:
-  // 1. Find and delete the linked cashbook entry
-  // 2. Recalculate account balance
-
   const ref = doc(db, "export_entries", id);
   await deleteDoc(ref);
   return true;
+}
+
+// --------------------------------------------------
+// 🔥 GENERATE SEARCH KEYWORDS
+// --------------------------------------------------
+function generateKeywords(name: string) {
+  const lower = name.toLowerCase();
+  return [lower, ...lower.split(" ")];
 }

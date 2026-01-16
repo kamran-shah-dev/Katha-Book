@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RefreshCw, Trash2, Pencil } from "lucide-react";
 
 import {
-  fetchExportEntries,
+  listenExportEntries,
   createExportEntry,
   updateExportEntry,
   deleteExportEntry,
@@ -56,10 +56,17 @@ export default function ExportEntryPage() {
   const amount = totalWeight * rate;
 
   useEffect(() => {
-    const unsub = listenAccounts(setAccounts);
-    loadEntries();
-    loadInvoiceNo();
+    const unsubAccounts = listenAccounts(setAccounts);
+    const unsubExport = listenExportEntries((list) => setEntries(list));
+
+    loadInvoiceNo(); 
+
+    return () => {
+      unsubAccounts();
+      unsubExport();
+    };
   }, []);
+
 
  const openInvoice = (entry: any, type: "import" | "export") => {
     const payload = {
@@ -71,13 +78,6 @@ export default function ExportEntryPage() {
     window.open("/invoice-preview", "_blank");
   };
 
-
-
-
-  const loadEntries = async () => {
-    const res = await fetchExportEntries();
-    setEntries(res);
-  };
 
   const loadInvoiceNo = async () => {
     const last = await getLastExportInvoiceNo();
@@ -96,7 +96,6 @@ export default function ExportEntryPage() {
     };
 
     await createExportEntry(payload);
-    await loadEntries();
     await loadInvoiceNo();
 
     form.reset({
@@ -120,7 +119,6 @@ export default function ExportEntryPage() {
     };
 
     await updateExportEntry(id, payload);
-    await loadEntries();
     setEditingId(null);
 
     form.reset({
@@ -139,7 +137,6 @@ export default function ExportEntryPage() {
   const deleteEntryHandler = async (id: string) => {
     if (!confirm("Delete this entry?")) return;
     await deleteExportEntry(id);
-    loadEntries();
   };
 
   const filtered = entries.filter((e) =>
@@ -160,7 +157,15 @@ export default function ExportEntryPage() {
     form.setValue("rate_per_kg", entry.rate_per_kg);
     form.setValue("vehicle_numbers", entry.vehicle_numbers);
     form.setValue("gd_no", entry.gd_no);
-    form.setValue("entry_date", format(entry.entry_date.toDate(), "yyyy-MM-dd"));
+    form.setValue(
+      "entry_date",
+      format(
+        entry.entry_date?.toDate
+          ? entry.entry_date.toDate()
+          : new Date(entry.entry_date),
+        "yyyy-MM-dd"
+      )
+    );
   };
 
   return (
@@ -320,7 +325,7 @@ export default function ExportEntryPage() {
               />
             </div>
 
-            <Button variant="outline" size="sm" onClick={loadEntries}>
+            <Button variant="outline" size="sm" disabled>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -354,7 +359,16 @@ export default function ExportEntryPage() {
                   filtered.map((entry) => (
                     <TableRow key={entry.id} className="border-b hover:bg-gray-50">
                       <TableCell>{entry.invoice_no}</TableCell>
-                      <TableCell>{format(new Date(entry.entry_date), "dd/MM/yy")}</TableCell>
+                      <TableCell>
+                        {entry.entry_date
+                          ? format(
+                              entry.entry_date?.toDate
+                                ? entry.entry_date.toDate()
+                                : new Date(entry.entry_date),
+                              "dd/MM/yy"
+                            )
+                          : "-"}
+                      </TableCell>
                       <TableCell>{entry.account_name}</TableCell>
                       <TableCell>{entry.product}</TableCell>
                       <TableCell className="text-right">{entry.bags_qty}</TableCell>
