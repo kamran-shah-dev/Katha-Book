@@ -1,99 +1,120 @@
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 
+function normalizeDate(value: any): Date {
+  if (!value) return new Date(0);
+
+  if (value instanceof Timestamp) return value.toDate();
+  if (value.toDate) return value.toDate();
+  if (typeof value === "string") return new Date(value);
+  if (value instanceof Date) return value;
+
+  return new Date(0);
+}
+
 export async function getDashboardTotals() {
   try {
-    // Get start and end of today
+    // GET START AND END OF TODAY
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-    // 1. TODAY'S CASHBOOK ENTRIES
-    const cashbookSnap = await getDocs(
+    const startTS = Timestamp.fromDate(startOfDay);
+    const endTS = Timestamp.fromDate(endOfDay);
+
+    // ================================
+    // 1️⃣ CASHBOOK
+    // ================================
+    const cashSnap = await getDocs(
       query(
         collection(db, "cashbook_entries"),
-        where("date", ">=", Timestamp.fromDate(startOfDay)),
-        where("date", "<=", Timestamp.fromDate(endOfDay))
+        where("date", ">=", startTS),
+        where("date", "<=", endTS)
       )
     );
 
     let todayCredit = 0;
     let todayDebit = 0;
-    const todayCashbookCount = cashbookSnap.size;
 
-    cashbookSnap.forEach((doc) => {
-      const data = doc.data();
+    cashSnap.forEach((d) => {
+      const data = d.data();
+      const amount = Number(data.amount || 0);
 
-      if (data.type === "CREDIT") {
-        todayCredit += Number(data.amount || 0);
-      } else if (data.type === "DEBIT") {
-        todayDebit += Number(data.amount || 0);
-      }
+      if (data.type === "CREDIT") todayCredit += amount;
+      if (data.type === "DEBIT") todayDebit += amount;
     });
 
     const cashInHand = todayCredit - todayDebit;
 
-    // 2. TODAY'S IMPORT ENTRIES
+    // ================================
+    // 2️⃣ IMPORTS
+    // ================================
     const importSnap = await getDocs(
       query(
         collection(db, "import_entries"),
-        where("entry_date", ">=", Timestamp.fromDate(startOfDay)),
-        where("entry_date", "<=", Timestamp.fromDate(endOfDay))
+        where("entry_date", ">=", startTS),
+        where("entry_date", "<=", endTS)
       )
     );
 
     let todayImportTotal = 0;
-    importSnap.forEach((doc) => {
-      todayImportTotal += Number(doc.data().amount || 0);
+
+    importSnap.forEach((d) => {
+      todayImportTotal += Number(d.data().amount || 0);
     });
 
-    // 3. TODAY'S EXPORT ENTRIES
+    // ================================
+    // 3️⃣ EXPORTS
+    // ================================
     const exportSnap = await getDocs(
       query(
         collection(db, "export_entries"),
-        where("entry_date", ">=", Timestamp.fromDate(startOfDay)),
-        where("entry_date", "<=", Timestamp.fromDate(endOfDay))
+        where("entry_date", ">=", startTS),
+        where("entry_date", "<=", endTS)
       )
     );
 
     let todayExportTotal = 0;
-    exportSnap.forEach((doc) => {
-      todayExportTotal += Number(doc.data().amount || 0);
+
+    exportSnap.forEach((d) => {
+      todayExportTotal += Number(d.data().amount || 0);
     });
 
-    // 4. TOTAL ACCOUNTS (ALL TIME - NOT DAILY)
+    // ================================
+    // 4️⃣ ACCOUNTS SUMMARY
+    // ================================
     const accountsSnap = await getDocs(collection(db, "accounts"));
 
     let activeAccounts = 0;
     let inactiveAccounts = 0;
 
-    accountsSnap.forEach((doc) => {
-      const data = doc.data();
-      if (data.is_active === true) {
-        activeAccounts++;
-      } else {
-        inactiveAccounts++;
-      }
+    accountsSnap.forEach((d) => {
+      const { is_active } = d.data();
+      if (is_active) activeAccounts++;
+      else inactiveAccounts++;
     });
 
+    // RETURN DASHBOARD SUMMARY
     return {
-      // TODAY'S DATA
-      todayCashbookCount,
+      // TODAY
+      todayCashbookCount: cashSnap.size,
       todayCredit,
       todayDebit,
       cashInHand,
+
       todayImportCount: importSnap.size,
       todayImportTotal,
+
       todayExportCount: exportSnap.size,
       todayExportTotal,
 
-      // ALL TIME DATA
+      // ALL TIME
       totalAccounts: accountsSnap.size,
       activeAccounts,
       inactiveAccounts,
     };
   } catch (error) {
-    console.error("❌ Error fetching dashboard totals:", error);
-    throw error;
+    console.error("❌ Dashboard Totals Error:", error);
+    return null;
   }
 }
