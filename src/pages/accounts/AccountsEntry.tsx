@@ -190,7 +190,7 @@ export default function AccountsEntry() {
                 value={form.watch("sub_head")}
                 onValueChange={(v) => form.setValue("sub_head", v as AccountFormData["sub_head"])}
               >
-                <SelectTrigger className="h-9 border-2 border-black">
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue placeholder="Select head" />
                 </SelectTrigger>
                 <SelectContent>
@@ -207,7 +207,7 @@ export default function AccountsEntry() {
                 value={form.watch("balance_status")}
                 onValueChange={(v) => form.setValue("balance_status", v as "CREDIT" | "DEBIT")}
               >
-                <SelectTrigger className="h-9 border-2 border-black">
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -260,7 +260,7 @@ export default function AccountsEntry() {
                 value={form.watch("is_active") ? "true" : "false"}
                 onValueChange={(v) => form.setValue("is_active", v === "true")}
               >
-                <SelectTrigger className="h-9 border-2 border-black">
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -153,7 +153,7 @@ export default function CashbookEntry() {
                   form.setValue("account_name", acc?.account_name || "");
                 }}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
@@ -173,7 +173,7 @@ export default function CashbookEntry() {
             <div className="md:col-span-1">
               <Label>Payment Detail</Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Invoice or GD No."
                 {...form.register("payment_detail")}
               />
@@ -185,7 +185,7 @@ export default function CashbookEntry() {
                 value={form.watch("pay_status")}
                 onValueChange={(v) => form.setValue("pay_status", v)}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -199,7 +199,7 @@ export default function CashbookEntry() {
               <Label>Amount</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("amount")}
               />
             </div>
@@ -208,7 +208,7 @@ export default function CashbookEntry() {
               <Label>Date</Label>
               <Input
                 type="date"
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("entry_date")}
               />
             </div>

@@ -210,7 +210,7 @@ export default function ImportEntryPage() {
               <Input
                 value={invoiceNo}
                 readOnly
-                className="h-9 border-2 border-black bg-gray-200 text-gray-700 font-semibold cursor-not-allowed"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-gray-200 text-gray-700 font-semibold cursor-not-allowed"
               />
             </div>
 
@@ -224,7 +224,7 @@ export default function ImportEntryPage() {
                   form.setValue("account_name", acc?.account_name || "");
                 }}
               >
-                <SelectTrigger className="h-9 border-2 border-black">
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
 
@@ -243,10 +243,10 @@ export default function ImportEntryPage() {
             </div>
 
             <div>
-              <Label>Supplier</Label>
+              <Label>Product</Label>
               <Input
-                className="h-9 border-2 border-black"
-                placeholder="Enter supplier"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                placeholder="Enter Product"
                 {...form.register("supplier")}
               />
             </div>
@@ -255,7 +255,7 @@ export default function ImportEntryPage() {
               <Label>Bags Qty</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("bags_qty")}
               />
             </div>
@@ -265,7 +265,7 @@ export default function ImportEntryPage() {
               <Input
                 type="number"
                 step="0.001"
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("weight_per_bag")}
               />
             </div>
@@ -275,7 +275,7 @@ export default function ImportEntryPage() {
               <Input
                 type="number"
                 step="0.01"
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("rate_per_kg")}
               />
             </div>
@@ -288,7 +288,7 @@ export default function ImportEntryPage() {
             <div className="md:col-span-2">
               <Label>Vehicle Numbers</Label>
               <Input
-                className="h-9 border-2 border-black"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="ABC-123, XYZ-555"
                 {...form.register("vehicle_numbers")}
               />
@@ -299,7 +299,7 @@ export default function ImportEntryPage() {
               <div className="w-full sm:w-1/2">
                 <Label>GRN No</Label>
                 <Input
-                  className="h-9 border-2 border-black"
+                  className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   {...form.register("grn_no")}
                 />
               </div>
@@ -394,7 +394,7 @@ export default function ImportEntryPage() {
                   </div>
 
                   <div className="mt-2">
-                    <p className="text-xs text-gray-500">Supplier</p>
+                    <p className="text-xs text-gray-500">Product</p>
                     <p className="font-medium text-sm">{entry.supplier}</p>
                   </div>
 
@@ -470,7 +470,7 @@ export default function ImportEntryPage() {
                   <TableHead className="border-r">Invoice#</TableHead>
                   <TableHead className="border-r">Date</TableHead>
                   <TableHead className="border-r">Account</TableHead>
-                  <TableHead className="border-r">Supplier</TableHead>
+                  <TableHead className="border-r">Product</TableHead>
                   <TableHead className="border-r text-right">Bags</TableHead>
                   <TableHead className="border-r text-right">Weight</TableHead>
                   <TableHead className="border-r text-right">Amount</TableHead>

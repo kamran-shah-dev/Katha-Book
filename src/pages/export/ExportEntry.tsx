@@ -189,7 +189,7 @@ export default function ExportEntryPage() {
               <Input
                 value={invoiceNo}
                 readOnly
-                className="h-9 border-2 border-black bg-gray-200 text-gray-700 font-semibold cursor-not-allowed"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-gray-200 text-gray-700 font-semibold cursor-not-allowed"
               />
             </div>
 
@@ -204,7 +204,7 @@ export default function ExportEntryPage() {
                   form.setValue("account_name", acc?.account_name || "");
                 }}
               >
-                <SelectTrigger className="h-9 border-2 border-black">
+                <SelectTrigger className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
@@ -220,7 +220,7 @@ export default function ExportEntryPage() {
             <div>
               <Label>Product</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Enter product"
                 {...form.register("product")}
               />
@@ -230,7 +230,7 @@ export default function ExportEntryPage() {
               <Label>Bags Qty</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("bags_qty")}
               />
             </div>
@@ -240,7 +240,7 @@ export default function ExportEntryPage() {
               <Input
                 type="number"
                 step="0.001"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("weight_per_bag")}
               />
             </div>
@@ -250,7 +250,7 @@ export default function ExportEntryPage() {
               <Input
                 type="number"
                 step="0.01"
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("rate_per_kg")}
               />
             </div>
@@ -263,7 +263,7 @@ export default function ExportEntryPage() {
             <div className="md:col-span-2">
               <Label>Vehicle Numbers</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="ABC-123, XYZ-555"
                 {...form.register("vehicle_numbers")}
               />
@@ -273,7 +273,7 @@ export default function ExportEntryPage() {
               <div className="w-full sm:w-1/2">
                 <Label>GD No</Label>
                 <Input
-                  className="h-9 border-2 border-black focus:outline-none"
+                  className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   {...form.register("gd_no")}
                 />
               </div>
