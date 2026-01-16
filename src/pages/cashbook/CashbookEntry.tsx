@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { createCashEntry, deleteCashEntry, fetchCashEntries, updateCashEntry } from "@/services/cashbook.services";
+import { createCashEntry, deleteCashEntry, listenCashEntries, updateCashEntry } from "@/services/cashbook.services";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { listenAccounts } from "@/services/accounts.services";
@@ -62,22 +62,23 @@ export default function CashbookEntry() {
       : total - Number(e.amount);
   }, 0);
 
-useEffect(() => {
-  const unsubscribe = listenAccounts((list) => {
-    setAccounts(list);
-    setLoadingAccounts(false);
-  });
+  useEffect(() => {
+    // REALTIME ACCOUNTS
+    const unsubscribeAccounts = listenAccounts((list) => {
+      setAccounts(list);
+      setLoadingAccounts(false);
+    });
 
-  loadEntries(); // still needed for cash entries
+    // REALTIME CASH ENTRIES
+    const unsubscribeCash = listenCashEntries((list) => {
+      setEntries(list);
+    });
 
-  return () => unsubscribe();
-}, []);
-
-
-  const loadEntries = async () => {
-    const list = await fetchCashEntries();
-    setEntries(list);
-  };
+    return () => {
+      unsubscribeAccounts();
+      unsubscribeCash();
+    };
+  }, []);
 
   // SAVE NEW ENTRY
   const saveEntry = async (data: any) => {
@@ -88,7 +89,6 @@ useEffect(() => {
         await createCashEntry(data);
       }
 
-      await loadEntries();
       setEditingId(null);
 
       form.reset({
@@ -110,7 +110,6 @@ useEffect(() => {
     if (!confirm("Remove this entry?")) return;
 
     await deleteCashEntry(id);
-    loadEntries();
   };
 
   // LOAD ENTRY INTO FORM FOR EDITING

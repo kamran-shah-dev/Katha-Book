@@ -4,12 +4,11 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  getDocs,
   getDoc,
+  onSnapshot,
   query,
   orderBy,
   where,
-  limit,
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
@@ -17,42 +16,63 @@ import { updateAccountBalance } from "./accounts.services";
 
 const cashbookCollection = collection(db, "cashbook_entries");
 
-// 🔥 CREATE ENTRY (WITH ACCOUNT BALANCE UPDATE)
+// --------------------------------------------------
+// 🔥 REALTIME LISTENER FOR CASHBOOK ENTRIES
+// --------------------------------------------------
+export function listenCashEntries(callback: (data: any[]) => void) {
+  const q = query(cashbookCollection, orderBy("date", "desc"));
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const list = snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
+    callback(list);
+  });
+
+  return unsubscribe;
+}
+
+// --------------------------------------------------
+// 🔥 CREATE ENTRY (updates account balance first)
+// --------------------------------------------------
 export async function createCashEntry(data: any) {
   try {
-    // 1. UPDATE ACCOUNT BALANCE FIRST
+    // 1) Update account balance
     const newBalance = await updateAccountBalance(
       data.account_id,
       Number(data.amount),
       data.pay_status
     );
 
-    // 2. CREATE CASHBOOK ENTRY
+    // 2) Save entry
     const payload = {
       account_id: data.account_id,
       account_name: data.account_name,
       amount: Number(data.amount),
-      balance_after: newBalance, // ⬅️ Store the account's new balance
+      balance_after: newBalance,
       type: data.pay_status,
       date: new Date(data.entry_date),
       payment_details: data.payment_detail || "",
       remarks: data.remarks || "",
       invoice_no: data.payment_detail || "",
-      reference_type: "MANUAL", // ⬅️ Indicate this is a manual entry
-      reference_id: "", // ⬅️ Empty for manual entries
+      reference_type: "MANUAL",
+      reference_id: "",
       created_at: new Date(),
       search_keywords: generateKeywords(data.account_name),
     };
 
-    const docRef = await addDoc(cashbookCollection, payload);
-    return docRef.id;
+    const ref = await addDoc(cashbookCollection, payload);
+    return ref.id;
   } catch (error) {
     console.error("Error creating cashbook entry:", error);
     throw error;
   }
 }
 
-// 🔥 CREATE ENTRY FROM IMPORT/EXPORT (AUTO-GENERATED)
+// --------------------------------------------------
+// 🔥 CREATE ENTRY FROM IMPORT/EXPORT
+// --------------------------------------------------
 export async function createCashEntryFromTransaction(
   accountId: string,
   accountName: string,
@@ -64,17 +84,15 @@ export async function createCashEntryFromTransaction(
   date: Date
 ) {
   try {
-    // 1. UPDATE ACCOUNT BALANCE
     const newBalance = await updateAccountBalance(accountId, amount, type);
 
-    // 2. CREATE CASHBOOK ENTRY
     const payload = {
       account_id: accountId,
       account_name: accountName,
-      amount: amount,
+      amount,
       balance_after: newBalance,
-      type: type,
-      date: date,
+      type,
+      date,
       payment_details: `${referenceType} ${invoiceNo}`,
       remarks: `Auto-generated from ${referenceType} entry`,
       invoice_no: invoiceNo,
@@ -84,62 +102,46 @@ export async function createCashEntryFromTransaction(
       search_keywords: generateKeywords(accountName),
     };
 
-    const docRef = await addDoc(cashbookCollection, payload);
-    return docRef.id;
+    const ref = await addDoc(cashbookCollection, payload);
+    return ref.id;
   } catch (error) {
     console.error("Error creating auto cashbook entry:", error);
     throw error;
   }
 }
 
-// 🔥 GENERATE SEARCH KEYWORDS
-function generateKeywords(name: string) {
-  const lower = name.toLowerCase();
-  return [lower, ...lower.split(" ")];
-}
-
-// 🔥 FETCH ALL ENTRIES
-export async function fetchCashEntries() {
-  const q = query(cashbookCollection, orderBy("date", "desc"));
-  const snap = await getDocs(q);
-
-  return snap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
-}
-
-// 🔥 SEARCH BY KEYWORD
+// --------------------------------------------------
+// 🔥 SEARCH ENTRIES
+// --------------------------------------------------
 export async function searchCashEntries(keyword: string) {
-  const lower = keyword.toLowerCase();
+  const lower = keyword.toLowerCase().trim();
 
   const q = query(
     cashbookCollection,
     where("search_keywords", "array-contains", lower)
   );
 
-  const snap = await getDocs(q);
-
-  return snap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  return new Promise<any[]>((resolve) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const results = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      resolve(results);
+      unsubscribe(); // Stop after one-time search result
+    });
+  });
 }
 
-// 🔥 UPDATE ENTRY (COMPLEX - NEEDS BALANCE RECALCULATION)
+// --------------------------------------------------
+// 🔥 UPDATE ENTRY
+// (⚠️ Complex balances not recalculated here)
+// --------------------------------------------------
 export async function updateCashEntry(id: string, data: any) {
-  // ⚠️ WARNING: Updating cashbook entries is complex because it affects account balances
-  // For now, we'll just update the entry details but NOT recalculate balances
-  // In a production system, you'd need to:
-  // 1. Get the old entry
-  // 2. Reverse the old balance change
-  // 3. Apply the new balance change
-  // 4. Update all subsequent entries for that account
-
   const ref = doc(db, "cashbook_entries", id);
 
   const payload = {
-    account_id: data.account_id || "",
+    account_id: data.account_id,
     account_name: data.account_name,
     amount: Number(data.amount),
     date: new Date(data.entry_date),
@@ -154,12 +156,20 @@ export async function updateCashEntry(id: string, data: any) {
   return true;
 }
 
-// 🔥 DELETE ENTRY (ALSO COMPLEX - NEEDS BALANCE RECALCULATION)
+// --------------------------------------------------
+// 🔥 DELETE ENTRY
+// (⚠️ Does not recalc balances yet)
+// --------------------------------------------------
 export async function deleteCashEntry(id: string) {
-  // ⚠️ WARNING: Same issue as update - deleting affects balances
-  // For now, simple delete. In production, you'd need to recalculate all balances
-
   const ref = doc(db, "cashbook_entries", id);
   await deleteDoc(ref);
   return true;
+}
+
+// --------------------------------------------------
+// 🔥 GENERATE SEARCH KEYWORDS
+// --------------------------------------------------
+function generateKeywords(name: string) {
+  const lower = name.toLowerCase();
+  return [lower, ...lower.split(" ")];
 }
