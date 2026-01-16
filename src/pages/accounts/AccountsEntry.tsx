@@ -293,7 +293,7 @@ export default function AccountsEntry() {
         </CardContent>
       </Card>
 
-      {/* TABLE */}
+      {/* TABLE/CARDS SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">
         <CardHeader className="py-2 px-3 sm:px-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -320,17 +320,99 @@ export default function AccountsEntry() {
         </CardHeader>
 
         <CardContent className="p-0">
-          <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
-            <Table className="w-full text-sm">
+          {/* MOBILE CARD VIEW (hidden on md and up) */}
+          <div className="md:hidden max-h-[500px] overflow-y-auto p-3 space-y-3">
+            {accounts.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                No accounts found.
+              </div>
+            ) : (
+              accounts.map((acc: any) => (
+                <div key={acc.id} className="border border-gray-300 rounded-lg p-3 bg-white shadow-sm">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500">Account Name</p>
+                        <p className="font-semibold text-sm">{acc.account_name}</p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                          acc.is_active ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+                        }`}
+                      >
+                        {acc.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
 
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500">Head</p>
+                        <p className="font-medium">{acc.sub_head}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Type</p>
+                        <p className="font-medium">{acc.balance_status}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Opening Balance</p>
+                        <p className="font-medium">{acc.opening_balance.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Cell</p>
+                        <p className="font-medium">{acc.cell_no}</p>
+                      </div>
+                    </div>
+
+                    {acc.ntn_number && (
+                      <div>
+                        <p className="text-xs text-gray-500">NTN Number</p>
+                        <p className="text-sm font-medium">{acc.ntn_number}</p>
+                      </div>
+                    )}
+
+                    {acc.address && (
+                      <div>
+                        <p className="text-xs text-gray-500">Address</p>
+                        <p className="text-sm">{acc.address}</p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2 border-t">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                        onClick={() => handleEdit(acc)}
+                      >
+                        <Pencil size={14} className="mr-1" />
+                        Edit
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="px-4"
+                        onClick={() => deleteAccount(acc.id)}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (hidden on mobile) */}
+          <div className="hidden md:block max-h-[500px] overflow-y-auto">
+            <Table className="w-full text-sm">
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b border-gray-300">
-                  <TableHead className="border-r w-40 min-w-[120px]">Account Name</TableHead>
-                  <TableHead className="border-r w-32 min-w-[100px] hidden sm:table-cell">Head</TableHead>
-                  <TableHead className="border-r w-28 min-w-[80px] text-right hidden md:table-cell">Opening</TableHead>
-                  <TableHead className="border-r w-28 min-w-[100px] text-right">Cell</TableHead>
-                  <TableHead className="border-r w-24 min-w-[80px] text-center hidden lg:table-cell">Status</TableHead>
-                  <TableHead className="text-center w-28 min-w-[120px]">Action</TableHead>
+                  <TableHead className="border-r">Account Name</TableHead>
+                  <TableHead className="border-r">Head</TableHead>
+                  <TableHead className="border-r text-right">Opening</TableHead>
+                  <TableHead className="border-r text-right">Cell</TableHead>
+                  <TableHead className="border-r text-center">Status</TableHead>
+                  <TableHead className="text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -344,13 +426,12 @@ export default function AccountsEntry() {
                 ) : (
                   accounts.map((acc: any) => (
                     <TableRow key={acc.id} className="border-b hover:bg-gray-50">
-
                       <TableCell className="border-r">{acc.account_name}</TableCell>
-                      <TableCell className="border-r hidden sm:table-cell">{acc.sub_head}</TableCell>
-                      <TableCell className="border-r text-right hidden md:table-cell">{acc.opening_balance.toLocaleString()}</TableCell>
+                      <TableCell className="border-r">{acc.sub_head}</TableCell>
+                      <TableCell className="border-r text-right">{acc.opening_balance.toLocaleString()}</TableCell>
                       <TableCell className="border-r text-right">{acc.cell_no}</TableCell>
 
-                      <TableCell className="border-r text-center hidden lg:table-cell">
+                      <TableCell className="border-r text-center">
                         <span
                           className={`px-2 py-1 rounded text-xs font-semibold ${
                             acc.is_active ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
@@ -361,32 +442,29 @@ export default function AccountsEntry() {
                       </TableCell>
 
                       <TableCell className="text-center">
-                        <div className="flex gap-1 sm:gap-2 justify-center">
+                        <div className="flex gap-2 justify-center">
                           <Button
                             size="sm"
-                            className="bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28] text-xs sm:text-sm px-2 sm:px-3"
+                            className="bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
                             onClick={() => handleEdit(acc)}
                           >
-                            <Pencil size={14} className="sm:mr-1" />
-                            <span className="hidden sm:inline">Edit</span>
+                            <Pencil size={14} className="mr-1" />
+                            Edit
                           </Button>
 
                           <Button
                             variant="destructive"
                             size="sm"
-                            className="px-2 sm:px-3"
                             onClick={() => deleteAccount(acc.id)}
                           >
                             <Trash2 size={14} />
                           </Button>
                         </div>
                       </TableCell>
-
                     </TableRow>
                   ))
                 )}
               </TableBody>
-
             </Table>
           </div>
         </CardContent>

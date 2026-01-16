@@ -63,13 +63,11 @@ export default function CashbookEntry() {
   }, 0);
 
   useEffect(() => {
-    // REALTIME ACCOUNTS
     const unsubscribeAccounts = listenAccounts((list) => {
       setAccounts(list);
       setLoadingAccounts(false);
     });
 
-    // REALTIME CASH ENTRIES
     const unsubscribeCash = listenCashEntries((list) => {
       setEntries(list);
     });
@@ -80,7 +78,6 @@ export default function CashbookEntry() {
     };
   }, []);
 
-  // SAVE NEW ENTRY
   const saveEntry = async (data: any) => {
     try {
       if (editingId) {
@@ -105,39 +102,47 @@ export default function CashbookEntry() {
     }
   };
 
-  // DELETE ENTRY
   const deleteEntry = async (id: string) => {
     if (!confirm("Remove this entry?")) return;
-
     await deleteCashEntry(id);
   };
 
-  // LOAD ENTRY INTO FORM FOR EDITING
   const handleEdit = (entry: any) => {
-  setEditingId(entry.id);
+    setEditingId(entry.id);
 
-  form.setValue("account_name", entry.account_name);
-  form.setValue("payment_detail", entry.payment_details || "");
-  form.setValue("pay_status", entry.type);
-  form.setValue("amount", entry.amount);
-  form.setValue("entry_date", entry.date.toDate().toISOString().split("T")[0]);
-  form.setValue("remarks", entry.remarks || "");
-};
+    form.setValue("account_name", entry.account_name);
+    form.setValue("payment_detail", entry.payment_details || "");
+    form.setValue("pay_status", entry.type);
+    form.setValue("amount", entry.amount);
+    form.setValue("entry_date", entry.date.toDate().toISOString().split("T")[0]);
+    form.setValue("remarks", entry.remarks || "");
+  };
+
+  // Filter entries based on search
+  const filteredEntries = entries.filter((entry) => {
+    const searchLower = search.toLowerCase();
+    return (
+      entry.account_name?.toLowerCase().includes(searchLower) ||
+      entry.payment_details?.toLowerCase().includes(searchLower) ||
+      entry.amount?.toString().includes(searchLower)
+    );
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-2 sm:px-0">
+
       {/* FORM SECTION */}
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
-        <CardHeader className="py-2 px-4">
-          <CardTitle className="text-xl font-bold">
+        <CardHeader className="py-2 px-3 sm:px-4">
+          <CardTitle className="text-lg sm:text-xl font-bold">
             Cashbook Entry {editingId ? "(Editing)" : ""}
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="bg-gray-300 py-4 px-4 space-y-3">
-          {/* ROW 1 */}
+        <CardContent className="bg-gray-300 py-3 sm:py-4 px-3 sm:px-4 space-y-3">
+
           <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-            {/* ACCOUNT NAME */}
+
             <div className="md:col-span-1">
               <Label>Account Name</Label>
               <Select
@@ -148,7 +153,7 @@ export default function CashbookEntry() {
                   form.setValue("account_name", acc?.account_name || "");
                 }}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
@@ -165,24 +170,22 @@ export default function CashbookEntry() {
               </Select>
             </div>
 
-            {/* PAYMENT DETAIL */}
             <div className="md:col-span-1">
               <Label>Payment Detail</Label>
               <Input
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-offset-0 focus-visible:ring-0"
+                className="h-9 border-2 border-black"
                 placeholder="Invoice or GD No."
                 {...form.register("payment_detail")}
               />
             </div>
 
-            {/* TYPE */}
             <div className="md:col-span-1">
               <Label>Type</Label>
               <Select
                 value={form.watch("pay_status")}
                 onValueChange={(v) => form.setValue("pay_status", v)}
               >
-                <SelectTrigger className="h-9 border-2 border-black rounded-md focus:outline-none focus:ring-0">
+                <SelectTrigger className="h-9 border-2 border-black rounded-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -192,141 +195,221 @@ export default function CashbookEntry() {
               </Select>
             </div>
 
-            {/* AMOUNT */}
             <div className="md:col-span-1">
               <Label>Amount</Label>
               <Input
                 type="number"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-offset-0 focus-visible:ring-0"
+                className="h-9 border-2 border-black"
                 {...form.register("amount")}
               />
             </div>
 
-            {/* DATE */}
-            <div className="md:col-span-1 w-[140px]">
+            <div className="md:col-span-1 w-full md:w-[140px]">
               <Label>Date</Label>
               <Input
                 type="date"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-offset-0 focus-visible:ring-0"
+                className="h-9 border-2 border-black"
                 {...form.register("entry_date")}
               />
             </div>
 
-            {/* SAVE / UPDATE BUTTON */}
             <div className="flex items-end md:col-span-1">
               <Button
-                className="w-full h-10 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                className="w-full h-10 bg-[#0A2A43] text-white font-semibold"
                 onClick={form.handleSubmit(saveEntry)}
               >
                 {editingId ? "Update" : "Save Entry"}
               </Button>
             </div>
+
           </div>
+
         </CardContent>
       </Card>
 
-      {/* TABLE SECTION */}
+      {/* TABLE/CARDS SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">
-        <CardHeader className="py-2 px-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <CardTitle className="text-xl font-bold">Cashbook Entries</CardTitle>
+        <CardHeader className="py-2 px-3 sm:px-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <CardTitle className="text-lg sm:text-xl font-bold">Cashbook Entries</CardTitle>
 
               <Input
                 type="text"
                 placeholder="Search..."
-                className="h-9 w-60 border border-gray-400"
+                className="h-9 border-2 border-black w-full sm:w-60"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setSearch("")} className="w-full sm:w-auto">
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
 
         <CardContent className="p-0">
-          <div className="max-h-[500px] overflow-y-auto">
+          {/* MOBILE CARD VIEW (hidden on md and up) */}
+          <div className="md:hidden max-h-[500px] overflow-y-auto p-3 space-y-3">
+            {filteredEntries.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                No entries found.
+              </div>
+            ) : (
+              filteredEntries.map((entry) => (
+                <div key={entry.id} className="border border-gray-300 rounded-lg p-3 bg-white shadow-sm">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500">Date</p>
+                        <p className="font-semibold text-sm">
+                          {entry.date?.toDate().toISOString().split("T")[0]}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                          entry.type === "CREDIT" 
+                            ? "bg-green-200 text-green-800" 
+                            : "bg-red-200 text-red-800"
+                        }`}
+                      >
+                        {entry.type}
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-gray-500">Account</p>
+                      <p className="font-medium text-sm">{entry.account_name}</p>
+                    </div>
+
+                    {entry.payment_details && (
+                      <div>
+                        <p className="text-xs text-gray-500">Payment Detail</p>
+                        <p className="text-sm">{entry.payment_details}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                      <div>
+                        <p className="text-xs text-gray-500">
+                          {entry.type === "CREDIT" ? "Credit Amount" : "Debit Amount"}
+                        </p>
+                        <p className={`font-bold text-sm ${
+                          entry.type === "CREDIT" ? "text-green-600" : "text-red-600"
+                        }`}>
+                          {entry.amount.toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Balance After</p>
+                        <p className="font-medium text-sm">
+                          {entry.balance_after?.toLocaleString() || 0}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2 border-t">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-[#0A2A43] text-white font-semibold hover:bg-[#051A28]"
+                        onClick={() => handleEdit(entry)}
+                      >
+                        <Pencil size={14} className="mr-1" />
+                        Edit
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="px-4"
+                        onClick={() => deleteEntry(entry.id)}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (hidden on mobile) */}
+          <div className="hidden md:block max-h-[500px] overflow-y-auto">
             <Table className="w-full text-sm">
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b border-gray-300">
-                  <TableHead className="w-[150px] border-r">Date</TableHead>
-                  <TableHead className="w-[220px] border-r">Account</TableHead>
-                  <TableHead className="w-[200px] border-r">Detail</TableHead>
-                  <TableHead className="text-right w-[130px] border-r">Credit</TableHead>
-                  <TableHead className="text-right w-[130px] border-r">Debit</TableHead>
-                  <TableHead className="text-right w-[150px] border-r">Account Balance</TableHead>
-                  <TableHead className="text-center w-[120px]">Action</TableHead>
+                  <TableHead className="border-r">Date</TableHead>
+                  <TableHead className="border-r">Account</TableHead>
+                  <TableHead className="border-r">Detail</TableHead>
+                  <TableHead className="text-right border-r">Credit</TableHead>
+                  <TableHead className="text-right border-r">Debit</TableHead>
+                  <TableHead className="text-right border-r">Account Balance</TableHead>
+                  <TableHead className="text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
-                {entries
-                  .filter((e) =>
-                    e.account_name.toLowerCase().includes(search.toLowerCase())
-                  )
-                  .map((entry) => (
-                    <TableRow
-                      key={entry.id}
-                      className="border-b border-gray-200 hover:bg-gray-50"
-                    >
-                      <TableCell>
+                {filteredEntries.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                      No entries found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredEntries.map((entry) => (
+                    <TableRow key={entry.id} className="border-b hover:bg-gray-50">
+                      <TableCell className="border-r">
                         {entry.date?.toDate().toISOString().split("T")[0]}
                       </TableCell>
-
-                      <TableCell className="truncate">{entry.account_name}</TableCell>
-
-                      <TableCell className="truncate">
-                        {entry.payment_details || "-"}
+                      <TableCell className="border-r">{entry.account_name}</TableCell>
+                      <TableCell className="border-r">{entry.payment_details || "-"}</TableCell>
+                      <TableCell className="text-right text-green-600 border-r">
+                        {entry.type === "CREDIT" ? entry.amount.toLocaleString() : "-"}
                       </TableCell>
-
-                      <TableCell className="text-right text-green-600">
-                        {entry.type === "CREDIT" ? entry.amount : "-"}
+                      <TableCell className="text-right text-red-600 border-r">
+                        {entry.type === "DEBIT" ? entry.amount.toLocaleString() : "-"}
                       </TableCell>
-
-                      <TableCell className="text-right text-red-600">
-                        {entry.type === "DEBIT" ? entry.amount : "-"}
+                      <TableCell className="text-right border-r">
+                        {entry.balance_after?.toLocaleString() || 0}
                       </TableCell>
-
-                      <TableCell className="text-right">
-                      {entry.balance_after?.toLocaleString() || 0}
-                    </TableCell>
-
-
-                      <TableCell className="text-center flex justify-center gap-2">
-                        <Button
-                          size="sm"
-                          className="bg-[#0A2A43] text-white"
-                          onClick={() => handleEdit(entry)}
-                        >
-                          <Pencil size={14} />
-                        </Button>
-
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteEntry(entry.id)}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-2">
+                          <Button 
+                            size="sm" 
+                            className="bg-[#0A2A43] text-white hover:bg-[#051A28]" 
+                            onClick={() => handleEdit(entry)}
+                          >
+                            <Pencil size={14} className="mr-1" />
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => deleteEntry(entry.id)}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
 
-        {/* FOOTER TOTAL */}
-        <div className="border-t p-4 bg-gray-100 flex justify-between font-bold text-lg">
+        {/* CASH IN HAND FOOTER */}
+        <div className="border-t p-3 sm:p-4 bg-gray-100 flex justify-between font-bold text-base sm:text-lg">
           <span>CASH IN HAND:</span>
           <span className={cashInHand >= 0 ? "text-green-600" : "text-red-600"}>
-            {cashInHand}
+            {cashInHand.toLocaleString()}
           </span>
         </div>
+
       </Card>
+
     </div>
   );
 }
