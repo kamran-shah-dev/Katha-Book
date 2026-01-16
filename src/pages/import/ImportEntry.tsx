@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RefreshCw, Trash2, Pencil } from "lucide-react";
 
 import {
-  fetchImportEntries,
+  listenImportEntries,
   createImportEntry,
   updateImportEntryById,
   deleteImportEntryById,
@@ -57,16 +57,16 @@ export default function ImportEntryPage() {
   const amount = totalWeight * rate;
 
   useEffect(() => {
-    const unsubscribe = listenAccounts((list) => {
-        setAccounts(list);
-        setLoadingAccounts(false);
-    });
+      const unsubscribe = listenAccounts((list) => {
+          setAccounts(list);
+          setLoadingAccounts(false);
+      });
+      const unsubExport = listenImportEntries((list) => setEntries(list));
 
-    loadEntries();
-    loadInvoiceNo();
+      loadInvoiceNo();
 
-    return () => unsubscribe();
-}, []);
+      return () => unsubscribe();
+  }, []);
 
 
   const openInvoice = (entry: any, type: "import" | "export") => {
@@ -92,10 +92,6 @@ export default function ImportEntryPage() {
     setInvoiceNo(next);
   };
 
-  const loadEntries = async () => {
-    const res = await fetchImportEntries();
-    setEntries(res);
-  };
 
   const generateNextInvoiceNo = () => {
     setInvoiceNo((prev) => {
@@ -124,7 +120,6 @@ export default function ImportEntryPage() {
     await createImportEntry(payload);
 
     generateNextInvoiceNo();
-    loadEntries();
 
     form.reset({
       account_id: "",
@@ -171,7 +166,6 @@ export default function ImportEntryPage() {
     await updateImportEntryById(id, payload);
 
     setEditingId(null);
-    loadEntries();
 
     form.reset({
       account_id: "",
@@ -189,7 +183,6 @@ export default function ImportEntryPage() {
   const deleteEntry = async (id: string) => {
     if (!confirm("Delete this entry?")) return;
     await deleteImportEntryById(id);
-    loadEntries();
   };
 
   const filtered = entries.filter(
@@ -360,7 +353,7 @@ export default function ImportEntryPage() {
               />
             </div>
 
-            <Button variant="outline" size="sm" onClick={loadEntries}>
+            <Button variant="outline" size="sm" disabled>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
