@@ -89,31 +89,125 @@ export default function LedgerReport() {
 
   // PRINT FUNCTION
   const handlePrint = () => {
+    const printContent = printRef.current.innerHTML;
     const win = window.open("", "_blank");
 
     win.document.write(`
       <html>
       <head>
-        <title>Ledger Report</title>
+        <title>Ledger Report - ${selectedAccount?.account_name}</title>
         <style>
-          body { font-family: Arial; padding: 20px; }
-          h1 { text-align: center; }
-          .center { text-align:center; margin-bottom:20px; color:#777; }
-          table { width: 100%; border-collapse: collapse; font-size:13px; }
-          th, td { border:1px solid #ccc; padding:8px; }
-          th { background:#f2f2f2; }
-          .credit { color:green; }
-          .debit { color:red; }
+          @media print {
+            @page { margin: 0.5cm; }
+          }
+          
+          body { 
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+          }
+          
+          .letterhead {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 3px solid #000;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+          }
+          
+          .logo-container {
+            width: 140px;
+            height: 80px;
+            border: 2px solid #000;
+            border-radius: 8px;
+            background: #f8f8f8;
+            overflow: hidden;
+          }
+          
+          .logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          
+          .company-info {
+            flex: 1;
+          }
+          
+          .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+            line-height: 1.2;
+          }
+          
+          .trading-company {
+            font-size: 14px;
+            color: #666;
+            margin: 2px 0;
+          }
+          
+          .contact-info {
+            text-align: right;
+            font-size: 12px;
+            line-height: 1.6;
+          }
+          
+          .report-title {
+            text-align: center;
+            margin: 20px 0 10px 0;
+            padding: 10px 0;
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+          }
+          
+          .report-title h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: normal;
+          }
+          
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+          }
+          
+          th, td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+            text-align: left;
+          }
+          
+          th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+          }
+          
+          .text-right {
+            text-align: right !important;
+          }
+          
+          .text-center {
+            text-align: center !important;
+          }
+          
+          .date-row {
+            background-color: #e8e8e8;
+            font-weight: bold;
+            text-align: center;
+          }
+          
+          tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+          }
         </style>
       </head>
       <body>
-        <h1>Ledger Report</h1>
-        <div class="center">
-          ${selectedAccount?.account_name}<br>
-          ${format(new Date(fromDate), "dd MMM yyyy")} -
-          ${format(new Date(toDate), "dd MMM yyyy")}
-        </div>
-        ${printRef.current.innerHTML}
+        ${printContent}
       </body>
       </html>
     `);
@@ -173,38 +267,100 @@ export default function LedgerReport() {
         </CardContent>
       </Card>
 
-      {/* Report Table */}
+      {/* Report Display */}
       {rows.length > 0 && (
-        <div ref={printRef}>
-          <table className="w-full border-collapse shadow-sm">
+        <div ref={printRef} className="bg-white p-8 rounded shadow-lg">
+          
+          {/* LETTERHEAD */}
+          <div className="flex items-center gap-4 border-b-4 border-black pb-4 mb-6">
+            
+            {/* Logo */}
+            <div className="w-36 h-20 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+              <img 
+                src="/logo.jpeg"
+                alt="Company Logo"
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+
+            {/* Company Info */}
+            <div className="flex-1">
+              <h1 className="text-xl font-bold leading-tight">
+                HAJI ABDUL HADI &<br />
+                HAJI SHER ALI
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">TRADING COMPANY</p>
+            </div>
+
+            {/* Contact Info */}
+            <div className="text-right text-lg leading-relaxed">
+              <p>sher_ali333@yahoo.com</p>
+              <p>+92-081-2826518</p>
+              <p>+92-081-2837919</p>
+              <p>+92-081-2835099</p>
+            </div>
+
+          </div>
+
+          {/* REPORT TITLE */}
+          <div className="text-center my-6 py-3 border-t-2 border-b-2 border-black">
+            <h2 className="text-base font-normal">
+              Mr. {selectedAccount?.account_name} From: {format(new Date(fromDate), "dd-MMM-yyyy")} To: {format(new Date(toDate), "dd-MMM-yyyy")}
+            </h2>
+          </div>
+
+          {/* TABLE */}
+          <table className="w-full border-collapse border border-black text-sm">
             <thead>
-              <tr>
-                <th>Date</th>
-                <th>Details</th>
-                <th style={{ textAlign: "right" }}>Credit</th>
-                <th style={{ textAlign: "right" }}>Debit</th>
-                <th style={{ textAlign: "right" }}>Balance</th>
+              <tr className="bg-gray-100">
+                <th className="border border-black px-3 py-2 text-center w-16">S.No</th>
+                <th className="border border-black px-3 py-2 text-center w-32">Date</th>
+                <th className="border border-black px-3 py-2 text-center">Detail</th>
+                <th className="border border-black px-3 py-2 text-center w-28">Credit</th>
+                <th className="border border-black px-3 py-2 text-center w-28">Debit</th>
+                <th className="border border-black px-3 py-2 text-center w-32">Balance</th>
               </tr>
             </thead>
 
             <tbody>
-              {rows.map((r, i) => (
-                <tr key={i}>
-                  <td>{format(new Date(r.date), "dd MMM yyyy")}</td>
-                  <td>{r.detail}</td>
-                  <td style={{ textAlign: "right", color: "green" }}>
-                    {r.credit ? "Rs. " + r.credit.toLocaleString() : ""}
-                  </td>
-                  <td style={{ textAlign: "right", color: "red" }}>
-                    {r.debit ? "Rs. " + r.debit.toLocaleString() : ""}
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    {r.balance >= 0 ? "Rs. " + r.balance.toLocaleString() : "-Rs. " + Math.abs(r.balance).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((r, i) => {
+                // Check if this is a date separator row
+                const isDateRow = i === 0 || format(new Date(rows[i - 1].date), "dd-MM-yyyy") !== format(new Date(r.date), "dd-MM-yyyy");
+                
+                return (
+                  <>
+                    {/* Date Separator Row */}
+                    {isDateRow && i > 0 && (
+                      <tr className="bg-gray-200">
+                        <td colSpan={6} className="border border-black px-3 py-2 text-center font-bold">
+                          {format(new Date(r.date), "dd-MM-yyyy")}
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Data Row */}
+                    <tr className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <td className="border border-black px-3 py-2 text-center">{i + 1}</td>
+                      <td className="border border-black px-3 py-2 text-center">
+                        {format(new Date(r.date), "dd-MM-yyyy")}
+                      </td>
+                      <td className="border border-black px-3 py-2">{r.detail}</td>
+                      <td className="border border-black px-3 py-2 text-right">
+                        {r.credit ? r.credit.toFixed(2) : "0.00"}
+                      </td>
+                      <td className="border border-black px-3 py-2 text-right">
+                        {r.debit ? r.debit.toFixed(2) : "0.00"}
+                      </td>
+                      <td className="border border-black px-3 py-2 text-right">
+                        {r.balance.toFixed(2)}
+                      </td>
+                    </tr>
+                  </>
+                );
+              })}
             </tbody>
           </table>
+
         </div>
       )}
 
