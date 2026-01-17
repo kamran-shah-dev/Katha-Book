@@ -176,17 +176,19 @@ export default function CashbookReport() {
           .logo-container {
             width: 140px;
             height: 80px;
-            border: 2px solid #000;
             border-radius: 8px;
             background: #f8f8f8;
             overflow: hidden;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
           
           .logo-container img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
           }
           
           .company-info {
