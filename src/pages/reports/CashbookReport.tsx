@@ -247,8 +247,9 @@ export default function CashbookReport() {
               <tr>
                 <th>Date</th>
                 <th>Transaction Details</th>
-                <th className="right">Cash Received</th>
-                <th className="right">Cash Paid</th>
+                <th className="right">Credit</th>
+                <th className="right">Debit</th>
+                <th className="right">Balance</th>
               </tr>
             </thead>
 
@@ -259,6 +260,9 @@ export default function CashbookReport() {
                   <td>{r.detail}</td>
                   <td className="right">{r.credit ? "Rs. " + r.credit.toLocaleString() : ""}</td>
                   <td className="right">{r.debit ? "Rs. " + r.debit.toLocaleString() : ""}</td>
+                  <td className="right">
+                    Rs. {(rows.slice(0, i + 1).reduce((sum, x) => sum + x.credit - x.debit, 0)).toLocaleString()}
+                  </td>
                 </tr>
               ))}
             </tbody>
