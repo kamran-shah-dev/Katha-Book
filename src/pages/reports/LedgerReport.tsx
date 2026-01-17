@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Printer } from "lucide-react";
+import { Search, Printer, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 
 export default function LedgerReport() {
   const [accounts, setAccounts] = useState([]);
@@ -87,9 +88,34 @@ export default function LedgerReport() {
     setRows(list);
   };
 
+  // EXPORT TO EXCEL
+  const handleExportExcel = () => {
+    // Prepare data for Excel
+    const excelData = rows.map((r, i) => ({
+      "S.No": i + 1,
+      "Date": format(new Date(r.date), "dd-MM-yyyy"),
+      "Detail": r.detail,
+      "Credit": r.credit ? r.credit.toFixed(2) : "0.00",
+      "Debit": r.debit ? r.debit.toFixed(2) : "0.00",
+      "Balance": r.balance.toFixed(2)
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ledger Report");
+
+    // Generate filename
+    const filename = `Ledger_${selectedAccount?.account_name}_${format(new Date(fromDate), "dd-MMM-yyyy")}_to_${format(new Date(toDate), "dd-MMM-yyyy")}.xlsx`;
+
+    // Download
+    XLSX.writeFile(wb, filename);
+  };
+
   // PRINT FUNCTION
   const handlePrint = () => {
-    const printContent = printRef.current.innerHTML;
     const win = window.open("", "_blank");
 
     win.document.write(`
@@ -98,13 +124,20 @@ export default function LedgerReport() {
         <title>Ledger Report - ${selectedAccount?.account_name}</title>
         <style>
           @media print {
-            @page { margin: 0.5cm; }
+            @page { 
+              margin: 1cm;
+              size: A4;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+            }
           }
           
           body { 
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
           }
           
           .letterhead {
@@ -123,6 +156,7 @@ export default function LedgerReport() {
             border-radius: 8px;
             background: #f8f8f8;
             overflow: hidden;
+            flex-shrink: 0;
           }
           
           .logo-container img {
@@ -152,6 +186,7 @@ export default function LedgerReport() {
             text-align: right;
             font-size: 12px;
             line-height: 1.6;
+            flex-shrink: 0;
           }
           
           .report-title {
@@ -172,12 +207,12 @@ export default function LedgerReport() {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
-            font-size: 13px;
+            font-size: 12px;
           }
           
           th, td {
             border: 1px solid #000;
-            padding: 8px 10px;
+            padding: 6px 8px;
             text-align: left;
           }
           
@@ -207,7 +242,76 @@ export default function LedgerReport() {
         </style>
       </head>
       <body>
-        ${printContent}
+        <!-- LETTERHEAD -->
+        <div class="letterhead">
+          <div class="logo-container">
+            <img src="/logo.jpeg" alt="Company Logo" />
+          </div>
+          
+          <div class="company-info">
+            <div class="company-name">
+              HAJI ABDUL HADI &<br />
+              HAJI SHER ALI
+            </div>
+            <div class="trading-company">TRADING COMPANY</div>
+          </div>
+          
+          <div class="contact-info">
+            <p>sher_ali333@yahoo.com</p>
+            <p>+92-081-2826518</p>
+            <p>+92-081-2837919</p>
+            <p>+92-081-2835099</p>
+          </div>
+        </div>
+
+        <!-- REPORT TITLE -->
+        <div class="report-title">
+          <h2>Mr. ${selectedAccount?.account_name} From: ${format(new Date(fromDate), "dd-MMM-yyyy")} To: ${format(new Date(toDate), "dd-MMM-yyyy")}</h2>
+        </div>
+
+        <!-- TABLE -->
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">S.No</th>
+              <th style="width: 100px;">Date</th>
+              <th>Detail</th>
+              <th style="width: 100px;">Credit</th>
+              <th style="width: 100px;">Debit</th>
+              <th style="width: 100px;">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((r, i) => {
+              const isDateRow = i === 0 || format(new Date(rows[i - 1].date), "dd-MM-yyyy") !== format(new Date(r.date), "dd-MM-yyyy");
+              
+              let html = '';
+              
+              if (isDateRow && i > 0) {
+                html += `
+                  <tr class="date-row">
+                    <td colspan="6" style="text-align: center; font-weight: bold;">
+                      ${format(new Date(r.date), "dd-MM-yyyy")}
+                    </td>
+                  </tr>
+                `;
+              }
+              
+              html += `
+                <tr>
+                  <td style="text-align: center;">${i + 1}</td>
+                  <td style="text-align: center;">${format(new Date(r.date), "dd-MM-yyyy")}</td>
+                  <td>${r.detail}</td>
+                  <td style="text-align: right;">${r.credit ? r.credit.toFixed(2) : "0.00"}</td>
+                  <td style="text-align: right;">${r.debit ? r.debit.toFixed(2) : "0.00"}</td>
+                  <td style="text-align: right;">${r.balance.toFixed(2)}</td>
+                </tr>
+              `;
+              
+              return html;
+            }).join('')}
+          </tbody>
+        </table>
       </body>
       </html>
     `);
@@ -258,9 +362,17 @@ export default function LedgerReport() {
             </Button>
 
             {rows.length > 0 && (
-              <Button variant="outline" onClick={handlePrint}>
-                <Printer className="w-4 h-4" />
-              </Button>
+              <>
+                <Button variant="outline" onClick={handlePrint}>
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
+                </Button>
+                
+                <Button variant="outline" onClick={handleExportExcel} className="bg-green-50 hover:bg-green-100">
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Excel
+                </Button>
+              </>
             )}
           </div>
 
@@ -275,11 +387,11 @@ export default function LedgerReport() {
           <div className="flex items-center gap-4 border-b-4 border-black pb-4 mb-6">
             
             {/* Logo */}
-            <div className="w-36 h-20 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+            <div className="w-36 h-20 border-0 border-black rounded-lg overflow-hidden bg-gray-50">
               <img 
-                src="/logo.jpeg"
-                alt="Company Logo"
-                className="max-w-full max-h-full object-contain"
+                src="/logo.jpeg" 
+                alt="Company Logo" 
+                className="w-full h-full object-cover"
               />
             </div>
 
@@ -293,7 +405,7 @@ export default function LedgerReport() {
             </div>
 
             {/* Contact Info */}
-            <div className="text-right text-lg leading-relaxed">
+            <div className="text-right text-xs leading-relaxed">
               <p>sher_ali333@yahoo.com</p>
               <p>+92-081-2826518</p>
               <p>+92-081-2837919</p>
