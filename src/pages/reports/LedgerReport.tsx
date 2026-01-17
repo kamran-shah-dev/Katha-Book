@@ -389,11 +389,11 @@ export default function LedgerReport() {
           <div className="flex items-center gap-4 border-b-4 border-black pb-4 mb-6">
             
             {/* Logo */}
-            <div className="w-36 h-20 border-0 border-black rounded-lg overflow-hidden bg-gray-50">
+            <div className="w-36 h-20 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
               <img 
-                src="/logo.jpeg" 
-                alt="Company Logo" 
-                className="w-full h-full object-cover"
+                src="/logo.jpeg"
+                alt="Company Logo"
+                className="max-w-full max-h-full object-contain"
               />
             </div>
 
