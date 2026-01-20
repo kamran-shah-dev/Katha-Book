@@ -189,25 +189,69 @@ export async function searchCashEntries(keyword: string) {
 
 // --------------------------------------------------
 // 🔥 UPDATE ENTRY
-// (⚠️ Complex balances not recalculated here)
 // --------------------------------------------------
 export async function updateCashEntry(id: string, data: any) {
-  const ref = doc(db, "cashbook_entries", id);
+  try {
+    // Get the existing entry
+    const entryRef = doc(db, "cashbook_entries", id);
+    const entrySnap = await getDoc(entryRef);
 
-  const payload = {
-    account_id: data.account_id,
-    account_name: data.account_name,
-    amount: Number(data.amount),
-    date: new Date(data.entry_date),
-    invoice_no: data.payment_detail || "",
-    payment_details: data.payment_detail || "",
-    remarks: data.remarks || "",
-    type: data.pay_status,
-    search_keywords: generateKeywords(data.account_name),
-  };
+    if (!entrySnap.exists()) {
+      throw new Error("Entry not found");
+    }
 
-  await updateDoc(ref, payload);
-  return true;
+    const oldEntry = entrySnap.data();
+    const accountRef = doc(db, "accounts", data.account_id);
+    const accountSnap = await getDoc(accountRef);
+
+    if (!accountSnap.exists()) {
+      throw new Error("Account not found");
+    }
+
+    // Reverse old transaction
+    let currentBalance = Number(accountSnap.data().current_balance || 0);
+    
+    if (oldEntry.type === "CREDIT") {
+      currentBalance -= Number(oldEntry.amount);
+    } else {
+      currentBalance += Number(oldEntry.amount);
+    }
+
+    // Apply new transaction
+    if (data.pay_status === "CREDIT") {
+      currentBalance += Number(data.amount);
+    } else {
+      currentBalance -= Number(data.amount);
+    }
+
+    const payload = {
+      account_id: data.account_id,
+      account_name: data.account_name,
+      amount: Number(data.amount),
+      balance_after: currentBalance,
+      date: new Date(data.entry_date),
+      invoice_no: data.payment_detail || "",
+      payment_details: data.payment_detail || "",
+      remarks: data.remarks || "",
+      type: data.pay_status,
+      search_keywords: generateKeywords(data.account_name),
+    };
+
+    // Use batch write
+    const batch = writeBatch(db);
+
+    batch.update(entryRef, payload);
+    batch.update(accountRef, {
+      current_balance: currentBalance,
+    });
+
+    await batch.commit();
+
+    return true;
+  } catch (error) {
+    console.error("Error updating cashbook entry:", error);
+    throw error;
+  }
 }
 
 // --------------------------------------------------
