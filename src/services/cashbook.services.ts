@@ -255,13 +255,49 @@ export async function updateCashEntry(id: string, data: any) {
 }
 
 // --------------------------------------------------
-// 🔥 DELETE ENTRY
-// (⚠️ Does not recalc balances yet)
+// 🔥 DELETE ENTRY (OPTIMIZED)
 // --------------------------------------------------
 export async function deleteCashEntry(id: string) {
-  const ref = doc(db, "cashbook_entries", id);
-  await deleteDoc(ref);
-  return true;
+  try {
+    const entryRef = doc(db, "cashbook_entries", id);
+    const entrySnap = await getDoc(entryRef);
+
+    if (!entrySnap.exists()) {
+      throw new Error("Entry not found");
+    }
+
+    const entry = entrySnap.data();
+    const accountRef = doc(db, "accounts", entry.account_id);
+    const accountSnap = await getDoc(accountRef);
+
+    if (!accountSnap.exists()) {
+      throw new Error("Account not found");
+    }
+
+    // Reverse the transaction
+    let currentBalance = Number(accountSnap.data().current_balance || 0);
+    
+    if (entry.type === "CREDIT") {
+      currentBalance -= Number(entry.amount);
+    } else {
+      currentBalance += Number(entry.amount);
+    }
+
+    // Use batch write
+    const batch = writeBatch(db);
+
+    batch.delete(entryRef);
+    batch.update(accountRef, {
+      current_balance: currentBalance,
+    });
+
+    await batch.commit();
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting cashbook entry:", error);
+    throw error;
+  }
 }
 
 // --------------------------------------------------
