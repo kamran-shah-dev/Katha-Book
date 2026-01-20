@@ -9,6 +9,7 @@ import {
   query,
   orderBy,
   where,
+  writeBatch,
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
