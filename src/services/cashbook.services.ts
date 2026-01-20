@@ -181,10 +181,11 @@ export async function searchCashEntries(keyword: string) {
         ...d.data(),
       }));
       resolve(results);
-      unsubscribe(); // Stop after one-time search result
+      unsubscribe();
     });
   });
 }
+
 
 // --------------------------------------------------
 // 🔥 UPDATE ENTRY
