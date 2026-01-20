@@ -255,7 +255,7 @@ export async function updateCashEntry(id: string, data: any) {
 }
 
 // --------------------------------------------------
-// 🔥 DELETE ENTRY (OPTIMIZED)
+// 🔥 DELETE ENTRY
 // --------------------------------------------------
 export async function deleteCashEntry(id: string) {
   try {
