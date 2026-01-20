@@ -110,7 +110,23 @@ export async function createCashEntryFromTransaction(
   date: Date
 ) {
   try {
-    const newBalance = await updateAccountBalance(accountId, amount, type);
+    // Get account current balance
+    const accountRef = doc(db, "accounts", accountId);
+    const accountSnap = await getDoc(accountRef);
+
+    if (!accountSnap.exists()) {
+      throw new Error("Account not found");
+    }
+
+    const currentBalance = Number(accountSnap.data().current_balance || 0);
+    
+    // Calculate new balance
+    let newBalance = 0;
+    if (type === "CREDIT") {
+      newBalance = currentBalance + amount;
+    } else {
+      newBalance = currentBalance - amount;
+    }
 
     const payload = {
       account_id: accountId,
@@ -128,8 +144,19 @@ export async function createCashEntryFromTransaction(
       search_keywords: generateKeywords(accountName),
     };
 
-    const ref = await addDoc(cashbookCollection, payload);
-    return ref.id;
+    // Use batch write
+    const batch = writeBatch(db);
+
+    const cashbookRef = doc(cashbookCollection);
+    batch.set(cashbookRef, payload);
+
+    batch.update(accountRef, {
+      current_balance: newBalance,
+    });
+
+    await batch.commit();
+
+    return cashbookRef.id;
   } catch (error) {
     console.error("Error creating auto cashbook entry:", error);
     throw error;
