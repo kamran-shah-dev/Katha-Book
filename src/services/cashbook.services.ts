@@ -35,19 +35,30 @@ export function listenCashEntries(callback: (data: any[]) => void) {
 }
 
 // --------------------------------------------------
-// 🔥 CREATE ENTRY (updates account balance first)
+// 🔥 CREATE ENTRY (OPTIMIZED WITH BATCH WRITE)
 // --------------------------------------------------
 export async function createCashEntry(data: any) {
   try {
-    // 1) Update account balance
-    const newBalance = await updateAccountBalance(
-      data.account_id,
-      Number(data.amount),
-      data.pay_status
-    );
+    // Get account current balance
+    const accountRef = doc(db, "accounts", data.account_id);
+    const accountSnap = await getDoc(accountRef);
 
-    // 2) Save entry
-    const payload = {
+    if (!accountSnap.exists()) {
+      throw new Error("Account not found");
+    }
+
+    const currentBalance = Number(accountSnap.data().current_balance || 0);
+    
+    // Calculate new balance
+    let newBalance = 0;
+    if (data.pay_status === "CREDIT") {
+      newBalance = currentBalance + Number(data.amount);
+    } else {
+      newBalance = currentBalance - Number(data.amount);
+    }
+
+    // Prepare cashbook entry
+    const cashbookPayload = {
       account_id: data.account_id,
       account_name: data.account_name,
       amount: Number(data.amount),
@@ -63,8 +74,22 @@ export async function createCashEntry(data: any) {
       search_keywords: generateKeywords(data.account_name),
     };
 
-    const ref = await addDoc(cashbookCollection, payload);
-    return ref.id;
+    // Use batch write for atomic operation
+    const batch = writeBatch(db);
+
+    // Add cashbook entry
+    const cashbookRef = doc(cashbookCollection);
+    batch.set(cashbookRef, cashbookPayload);
+
+    // Update account balance
+    batch.update(accountRef, {
+      current_balance: newBalance,
+    });
+
+    // Commit batch (faster than sequential operations)
+    await batch.commit();
+
+    return cashbookRef.id;
   } catch (error) {
     console.error("Error creating cashbook entry:", error);
     throw error;
