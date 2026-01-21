@@ -50,7 +50,7 @@ export default function CashbookEntry() {
       account_name: "",
       payment_detail: "",
       pay_status: "DEBIT",
-      amount: 0,
+      amount: undefined,
       entry_date: new Date().toISOString().split("T")[0],
       remarks: "",
     },
@@ -174,7 +174,7 @@ export default function CashbookEntry() {
               <Label>Payment Detail</Label>
               <Input
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                placeholder="Invoice or GD No."
+                placeholder=""
                 {...form.register("payment_detail")}
               />
             </div>
@@ -208,6 +208,7 @@ export default function CashbookEntry() {
               <Label>Date</Label>
               <Input
                 type="date"
+                max={new Date().toISOString().split("T")[0]}
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("entry_date")}
               />
