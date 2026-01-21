@@ -26,8 +26,8 @@ export default function Dashboard() {
     cashInHand: 0,
     todayImportCount: 0,
     todayImportTotal: 0,
-    todayExportCount: 0,
-    todayExportTotal: 0,
+    // todayExportCount: 0,
+    // todayExportTotal: 0,
     totalAccounts: 0,
     activeAccounts: 0,
     inactiveAccounts: 0,
@@ -148,7 +148,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Total Exports (Today) */}
-        <Card className="border-l-4 border-teal-500">
+        {/* <Card className="border-l-4 border-teal-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
               <FileOutput className="h-4 w-4" />
@@ -163,7 +163,7 @@ export default function Dashboard() {
               Rs. {stats.todayExportTotal.toLocaleString()}
             </p>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Active Accounts (All Time) */}
         <Card className="border-l-4 border-green-600">

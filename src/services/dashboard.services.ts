@@ -69,10 +69,10 @@ export async function getDashboardTotals() {
     // ---------------------------
     // 🔥 EXPORT TOTALS
     // ---------------------------
-    let todayExportTotal = 0;
-    exportSnap.forEach((d) => {
-      todayExportTotal += Number(d.data().amount || 0);
-    });
+      // let todayExportTotal = 0;
+      // exportSnap.forEach((d) => {
+      //   todayExportTotal += Number(d.data().amount || 0);
+      // });
 
     // ---------------------------
     // 🔥 ACCOUNT SUMMARY
@@ -100,7 +100,7 @@ export async function getDashboardTotals() {
       todayImportTotal,
 
       todayExportCount: exportSnap.size,
-      todayExportTotal,
+      // todayExportTotal,
 
       // ALL TIME
       totalAccounts: accountsSnap.size,
