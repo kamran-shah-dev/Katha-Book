@@ -239,17 +239,6 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        <Link
-          to="/reports/parties"
-          className="flex items-center gap-3 p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition border border-[#6F4E37]"
-        >
-          <Users className="h-8 w-8 text-[#6F4E37]" />
-          <div>
-            <p className="text-lg font-semibold text-[#3B2F2F]">Parties Report</p>
-            <p className="text-sm text-gray-500">All party accounts summary</p>
-          </div>
-        </Link>
-
       </div>
 
     </div>
