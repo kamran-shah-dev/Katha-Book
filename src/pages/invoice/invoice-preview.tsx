@@ -2,7 +2,7 @@ import ExportInvoiceTemplate from "@/components/invoices/ExportInvoiceTemplate";
 
 export default function InvoicePreview() {
   const stored = localStorage.getItem("invoiceData");
-  let entry = stored ? JSON.parse(stored) : null;
+  const entry = stored ? JSON.parse(stored) : null;
 
   if (!entry) return <div>No invoice data found</div>;
 

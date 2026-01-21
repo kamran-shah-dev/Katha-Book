@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
+import { Account } from "@/lib/types";
 
 // COLLECTION REFERENCE
 const accountsCollection = collection(db, "accounts");
@@ -19,14 +20,14 @@ const accountsCollection = collection(db, "accounts");
 // ---------------------------------------
 // 🔥 REALTIME LISTENER FOR ACCOUNTS (MAIN FIX)
 // ---------------------------------------
-export function listenAccounts(callback: (data: any[]) => void) {
+export function listenAccounts(callback: (data: Account[]) => void) {
   const q = query(accountsCollection, orderBy("account_name", "asc"));
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const list = snapshot.docs.map((d) => ({
       id: d.id,
       ...d.data(),
-    }));
+    })) as Account[];
 
     callback(list);
   });
@@ -37,7 +38,7 @@ export function listenAccounts(callback: (data: any[]) => void) {
 // ---------------------------------------
 // 🔥 CREATE ACCOUNT
 // ---------------------------------------
-export async function createAccount(data: any) {
+export async function createAccount(data: Omit<Account, "id" | "current_balance" | "created_at" | "search_keywords">) {
   const payload = {
     account_name: data.account_name,
     sub_head: data.sub_head,
@@ -72,7 +73,7 @@ function generateKeywords(name: string) {
 // ---------------------------------------
 // 🔥 GET SINGLE ACCOUNT
 // ---------------------------------------
-export async function getAccountById(id: string) {
+export async function getAccountById(id: string): Promise<Account | null> {
   const ref = doc(db, "accounts", id);
   const snap = await getDoc(ref);
 
@@ -81,17 +82,18 @@ export async function getAccountById(id: string) {
   return {
     id: snap.id,
     ...snap.data(),
-  };
+  } as Account;
 }
 
 // ---------------------------------------
 // 🔥 UPDATE ACCOUNT
 // (listener will auto-refresh UI)
 // ---------------------------------------
-export async function updateAccount(id: string, data: any) {
+export async function updateAccount(id: string, data: Partial<Account>) {
   const ref = doc(db, "accounts", id);
 
-  const payload = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload: any = {
     account_name: data.account_name,
     sub_head: data.sub_head,
     balance_status: data.balance_status,
@@ -100,8 +102,11 @@ export async function updateAccount(id: string, data: any) {
     ntn_number: data.ntn_number || "",
     address: data.address || "",
     is_active: data.is_active,
-    search_keywords: generateKeywords(data.account_name),
   };
+
+  if (data.account_name) {
+      payload.search_keywords = generateKeywords(data.account_name);
+  }
 
   await updateDoc(ref, payload);
   return true;
@@ -128,12 +133,12 @@ export async function searchAccounts(keyword: string) {
     where("search_keywords", "array-contains", lower)
   );
 
-  const snap = await new Promise<any[]>((resolve) => {
-    const results: any[] = [];
+  const snap = await new Promise<Account[]>((resolve) => {
+    const results: Account[] = [];
 
     onSnapshot(q, (snapshot) => {
       snapshot.forEach((doc) =>
-        results.push({ id: doc.id, ...doc.data() })
+        results.push({ id: doc.id, ...doc.data() } as Account)
       );
       resolve(results);
     });

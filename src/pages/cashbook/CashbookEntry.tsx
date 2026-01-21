@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { listenAccounts } from "@/services/accounts.services";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Account, CashEntry } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -36,11 +37,13 @@ const cashbookSchema = z.object({
   remarks: z.string().optional(),
 });
 
+type CashbookFormData = z.infer<typeof cashbookSchema>;
+
 export default function CashbookEntry() {
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<CashEntry[]>([]);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
 
   const form = useForm({
@@ -78,12 +81,14 @@ export default function CashbookEntry() {
     };
   }, []);
 
-  const saveEntry = async (data: any) => {
+  const saveEntry = async (data: CashbookFormData) => {
     try {
       if (editingId) {
-        await updateCashEntry(editingId, data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await updateCashEntry(editingId, data as any);
       } else {
-        await createCashEntry(data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await createCashEntry(data as any);
       }
 
       setEditingId(null);
@@ -107,7 +112,7 @@ export default function CashbookEntry() {
     await deleteCashEntry(id);
   };
 
-  const handleEdit = (entry: any) => {
+  const handleEdit = (entry: CashEntry) => {
     setEditingId(entry.id);
 
     form.setValue("account_name", entry.account_name);

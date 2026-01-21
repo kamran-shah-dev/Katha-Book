@@ -10,6 +10,7 @@ import {
   listenAccounts,
   searchAccounts
 } from "@/services/accounts.services";
+import { Account } from "@/lib/types";
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,7 +77,7 @@ const subHeadOptions = [
 
 export default function AccountsEntry() {
 
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -152,14 +153,14 @@ export default function AccountsEntry() {
   // -------------------------------------
   // EDIT ACCOUNT
   // -------------------------------------
-  const handleEdit = (acc: any) => {
+  const handleEdit = (acc: Account) => {
     setEditingId(acc.id);
 
     form.setValue("account_name", acc.account_name);
     form.setValue("sub_head", acc.sub_head);
     form.setValue("balance_status", acc.balance_status);
     form.setValue("opening_balance", acc.opening_balance);
-    form.setValue("cell_no", acc.cell_no);
+    form.setValue("cell_no", acc.cell_no || "");
     form.setValue("ntn_number", acc.ntn_number || "");
     form.setValue("address", acc.address || "");
     form.setValue("is_active", acc.is_active);
@@ -373,7 +374,7 @@ export default function AccountsEntry() {
                 No accounts found.
               </div>
             ) : (
-              accounts.map((acc: any) => (
+              accounts.map((acc) => (
                 <div key={acc.id} className="border border-gray-300 rounded-lg p-3 bg-white shadow-sm">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
@@ -470,7 +471,7 @@ export default function AccountsEntry() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  accounts.map((acc: any) => (
+                  accounts.map((acc) => (
                     <TableRow key={acc.id} className="border-b hover:bg-gray-50">
                       <TableCell className="border-r">{acc.account_name}</TableCell>
                       <TableCell className="border-r">{acc.sub_head}</TableCell>

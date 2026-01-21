@@ -13,20 +13,21 @@ import {
 
 import { db } from "@/firebaseConfig";
 import { createCashEntryFromTransaction } from "./cashbook.services";
+import { ExportEntry } from "@/lib/types";
 
 const exportCollection = collection(db, "export_entries");
 
 // --------------------------------------------------
 // 🔥 REALTIME LISTENER FOR EXPORT ENTRIES
 // --------------------------------------------------
-export function listenExportEntries(callback: (entries: any[]) => void) {
+export function listenExportEntries(callback: (entries: ExportEntry[]) => void) {
   const q = query(exportCollection, orderBy("entry_date", "desc"));
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const list = snapshot.docs.map((d) => ({
       id: d.id,
       ...d.data(),
-    }));
+    })) as ExportEntry[];
     callback(list);
   });
 
@@ -36,6 +37,7 @@ export function listenExportEntries(callback: (entries: any[]) => void) {
 // --------------------------------------------------
 // 🔥 CREATE EXPORT ENTRY (WITH AUTO CASHBOOK ENTRY)
 // --------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createExportEntry(data: any) {
   try {
     const payload = {
@@ -89,12 +91,12 @@ export async function searchExportEntries(keyword: string) {
     where("search_keywords", "array-contains", lower)
   );
 
-  return new Promise<any[]>((resolve) => {
+  return new Promise<ExportEntry[]>((resolve) => {
     const unsub = onSnapshot(q, (snapshot) => {
       const results = snapshot.docs.map((d) => ({
         id: d.id,
         ...d.data(),
-      }));
+      })) as ExportEntry[];
       resolve(results);
       unsub();
     });
@@ -119,6 +121,7 @@ export async function getLastExportInvoiceNo() {
 // --------------------------------------------------
 // 🔥 UPDATE EXPORT ENTRY
 // --------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateExportEntry(id: string, data: any) {
   const ref = doc(db, "export_entries", id);
 

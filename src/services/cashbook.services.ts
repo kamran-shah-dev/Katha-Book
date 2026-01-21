@@ -13,21 +13,21 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
-import { updateAccountBalance } from "./accounts.services";
+import { CashEntry } from "@/lib/types";
 
 const cashbookCollection = collection(db, "cashbook_entries");
 
 // --------------------------------------------------
 // 🔥 REALTIME LISTENER FOR CASHBOOK ENTRIES
 // --------------------------------------------------
-export function listenCashEntries(callback: (data: any[]) => void) {
+export function listenCashEntries(callback: (data: CashEntry[]) => void) {
   const q = query(cashbookCollection, orderBy("date", "desc"));
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const list = snapshot.docs.map((d) => ({
       id: d.id,
       ...d.data(),
-    }));
+    })) as CashEntry[];
     callback(list);
   });
 
@@ -37,6 +37,7 @@ export function listenCashEntries(callback: (data: any[]) => void) {
 // --------------------------------------------------
 // 🔥 CREATE ENTRY (OPTIMIZED WITH BATCH WRITE)
 // --------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createCashEntry(data: any) {
   try {
     // Get account current balance
@@ -174,12 +175,12 @@ export async function searchCashEntries(keyword: string) {
     where("search_keywords", "array-contains", lower)
   );
 
-  return new Promise<any[]>((resolve) => {
+  return new Promise<CashEntry[]>((resolve) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const results = snapshot.docs.map((d) => ({
         id: d.id,
         ...d.data(),
-      }));
+      })) as CashEntry[];
       resolve(results);
       unsubscribe();
     });
@@ -190,6 +191,7 @@ export async function searchCashEntries(keyword: string) {
 // --------------------------------------------------
 // 🔥 UPDATE ENTRY
 // --------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateCashEntry(id: string, data: any) {
   try {
     // Get the existing entry

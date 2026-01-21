@@ -16,6 +16,7 @@ import {
   deleteExportEntry,
   getLastExportInvoiceNo
 } from "@/services/export.services";
+import { ExportEntry, Account } from "@/lib/types";
 
 import { listenAccounts } from "@/services/accounts.services";
 
@@ -28,8 +29,8 @@ import {
 } from "@/components/ui/select";
 
 export default function ExportEntryPage() {
-  const [entries, setEntries] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [entries, setEntries] = useState<ExportEntry[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [search, setSearch] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("HAH001");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export default function ExportEntryPage() {
   }, []);
 
 
- const openInvoice = (entry: any, type: "import" | "export") => {
+ const openInvoice = (entry: ExportEntry, type: "import" | "export") => {
     const payload = {
       ...entry,
       type,
@@ -87,6 +88,7 @@ export default function ExportEntryPage() {
     setInvoiceNo(next);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveEntry = async (data: any) => {
     const payload = {
       ...data,
@@ -111,6 +113,7 @@ export default function ExportEntryPage() {
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateEntryHandler = async (id: string, data: any) => {
     const payload = {
       ...data,
@@ -146,7 +149,7 @@ export default function ExportEntryPage() {
     e.invoice_no.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleEdit = (entry: any) => {
+  const handleEdit = (entry: ExportEntry) => {
     setEditingId(entry.id);
 
     form.setValue("account_id", entry.account_id);
@@ -155,8 +158,8 @@ export default function ExportEntryPage() {
     form.setValue("bags_qty", entry.bags_qty);
     form.setValue("weight_per_bag", entry.weight_per_bag);
     form.setValue("rate_per_kg", entry.rate_per_kg);
-    form.setValue("vehicle_numbers", entry.vehicle_numbers);
-    form.setValue("gd_no", entry.gd_no);
+    form.setValue("vehicle_numbers", entry.vehicle_numbers || "");
+    form.setValue("gd_no", entry.gd_no || "");
     form.setValue(
       "entry_date",
       format(

@@ -13,11 +13,12 @@ import {
 
 import { db } from "@/firebaseConfig";
 import { createCashEntryFromTransaction } from "./cashbook.services";
+import { ImportEntry } from "@/lib/types";
 
 const importCollection = collection(db, "import_entries");
 
 // 🔥 REALTIME LISTENER
-export function listenImportEntries(callback: (list: any[]) => void) {
+export function listenImportEntries(callback: (list: ImportEntry[]) => void) {
   return onSnapshot(
     query(importCollection, orderBy("entry_date", "desc")),
     (snap) => {
@@ -28,7 +29,7 @@ export function listenImportEntries(callback: (list: any[]) => void) {
           d.data().entry_date?.toDate
             ? d.data().entry_date.toDate()
             : new Date(d.data().entry_date),
-      }));
+      })) as ImportEntry[];
 
       callback(formatted);
     }
@@ -36,6 +37,7 @@ export function listenImportEntries(callback: (list: any[]) => void) {
 }
 
 // 🔥 CREATE IMPORT ENTRY + AUTO CASHBOOK
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createImportEntry(data: any) {
   try {
     const payload = {
@@ -91,6 +93,7 @@ export async function getLastInvoiceNo() {
 }
 
 // 🔥 UPDATE IMPORT ENTRY
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateImportEntryById(id: string, data: any) {
   const ref = doc(db, "import_entries", id);
 

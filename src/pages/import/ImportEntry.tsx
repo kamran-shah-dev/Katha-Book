@@ -16,6 +16,7 @@ import {
   deleteImportEntryById,
   getLastInvoiceNo
 } from "@/services/import.services";
+import { ImportEntry, Account } from "@/lib/types";
 
 import { listenAccounts } from "@/services/accounts.services";
 
@@ -28,8 +29,8 @@ import {
 } from "@/components/ui/select";
 
 export default function ImportEntryPage() {
-  const [entries, setEntries] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [entries, setEntries] = useState<ImportEntry[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [search, setSearch] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("IMP001");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -72,7 +73,7 @@ export default function ImportEntryPage() {
       };
   }, []);
 
-  const openInvoice = (entry: any, type: "import" | "export") => {
+  const openInvoice = (entry: ImportEntry, type: "import" | "export") => {
     const payload = {
       ...entry,
       type,
@@ -98,6 +99,7 @@ export default function ImportEntryPage() {
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveEntry = async (data: any) => {
     const payload = {
       account_id: data.account_id,
@@ -130,7 +132,7 @@ export default function ImportEntryPage() {
     });
   };
 
-  const handleEdit = (entry: any) => {
+  const handleEdit = (entry: ImportEntry) => {
     setEditingId(entry.id);
 
     form.setValue("account_id", entry.account_id);
@@ -139,11 +141,12 @@ export default function ImportEntryPage() {
     form.setValue("bags_qty", entry.bags_qty);
     form.setValue("weight_per_bag", entry.weight_per_bag);
     form.setValue("rate_per_kg", entry.rate_per_kg);
-    form.setValue("vehicle_numbers", entry.vehicle_numbers);
-    form.setValue("grn_no", entry.grn_no);
+    form.setValue("vehicle_numbers", entry.vehicle_numbers || "");
+    form.setValue("grn_no", entry.grn_no || "");
     form.setValue("entry_date", entry.entry_date);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateEntry = async (id: string, data: any) => {
     const payload = {
       account_id: data.account_id,
