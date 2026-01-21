@@ -32,6 +32,8 @@ import {
 import { Trash2, Pencil, RefreshCw } from 'lucide-react';
 
 
+const normalizeName = (v: string) => v.trim().toLowerCase();
+
 // -----------------------------
 // VALIDATION SCHEMA
 // -----------------------------
@@ -43,16 +45,19 @@ const accountSchema = z.object({
     "EXPORT_PARTIES",
     "IMPORT_PARTIES",
     "NLC_TAFTAN_EXPENSE_LEDGERS",
-    "PERSONALS"
+    "Company"
   ]),
   balance_status: z.enum(["CREDIT", "DEBIT"]),
   opening_balance: z.coerce.number().min(0, "Opening balance required"),
   ntn_number: z.string().max(50).optional(),
   address: z.string().max(200).optional(),
   cell_no: z
-    .string()
-    .min(11, "Cell number must be 11 digits")
-    .max(11, "Cell number must be 11 digits"),
+  .string()
+  .optional()
+  .refine(
+    v => !v || /^[0-9]{10}$/.test(v),
+    "Enter 10 digit Pakistani number"
+  ),
   is_active: z.boolean(),
 });
 
@@ -65,7 +70,7 @@ const subHeadOptions = [
   { value: "EXPORT_PARTIES", label: "EXPORT PARTIES" },
   { value: "IMPORT_PARTIES", label: "IMPORT PARTIES" },
   { value: "NLC_TAFTAN_EXPENSE_LEDGERS", label: "NLC / TAFTAN EXPENSE LEDGERS" },
-  { value: "PERSONALS", label: "PERSONALS" },
+  { value: "Company", label: "COMPANY" },
 ];
 
 
@@ -82,14 +87,15 @@ export default function AccountsEntry() {
 }, []);
 
 
+  
 
   const form = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       account_name: "",
-      sub_head: "PERSONALS",
+      sub_head: "Company",
       balance_status: "DEBIT",
-      opening_balance: 0,
+      opening_balance: undefined,
       address: "",
       cell_no: "",
       ntn_number: "",
@@ -97,11 +103,26 @@ export default function AccountsEntry() {
     },
   });
 
+  const { errors } = form.formState;
 
   // -------------------------------------
   // SAVE OR UPDATE ACCOUNT
   // -------------------------------------
   const onSubmit = async (data: AccountFormData) => {
+    // 🔒 UNIQUE NAME CHECK
+    const alreadyExists = accounts.some(acc =>
+      normalizeName(acc.account_name) === normalizeName(data.account_name) &&
+      acc.id !== editingId
+    );
+
+    if (alreadyExists) {
+      form.setError("account_name", {
+        type: "manual",
+        message: "Account name already exists",
+      });
+      return;
+    }
+
     try {
       if (editingId) {
         await updateAccountService(editingId, data);
@@ -115,6 +136,7 @@ export default function AccountsEntry() {
       console.error("Error saving account:", error);
     }
   };
+
 
 
   // -------------------------------------
@@ -176,15 +198,6 @@ export default function AccountsEntry() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
 
             <div>
-              <Label className="text-sm">Account Name *</Label>
-              <Input
-                placeholder="Enter account name"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("account_name")}
-              />
-            </div>
-
-            <div>
               <Label className="text-sm">Head *</Label>
               <Select
                 value={form.watch("sub_head")}
@@ -200,6 +213,23 @@ export default function AccountsEntry() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label className="text-sm">Account Name *</Label>
+              <Input
+                placeholder="Enter account name"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("account_name")}
+              />
+              {/* 🔴 SMALL ERROR MESSAGE */}
+                {errors.account_name && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {errors.account_name.message}
+                  </p>
+                )}
+            </div>
+
+            
 
             <div>
               <Label className="text-sm">Type *</Label>
@@ -221,24 +251,38 @@ export default function AccountsEntry() {
               <Label className="text-sm">Opening Balance *</Label>
               <Input
                 type="number"
-                placeholder="0"
+                placeholder=""
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("opening_balance")}
               />
             </div>
 
             <div>
-              <Label className="text-sm">Cell No *</Label>
-              <Input
-                placeholder="03123456789"
-                maxLength={11}
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("cell_no")}
-                onInput={(e) => {
-                  e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "").slice(0, 11);
-                }}
-              />
+              <Label className="text-sm">Cell No</Label>
+
+              <div className="flex h-9 border-2 border-black rounded-md overflow-hidden">
+                
+                {/* Fixed country code */}
+                <div className="flex items-center px-3 bg-gray-200 text-sm font-semibold">
+                  +92
+                </div>
+
+                {/* User input */}
+                <input
+                  type="text"
+                  placeholder="3012345678"
+                  className="flex-1 px-3 outline-none text-sm"
+                  maxLength={10}
+                  {...form.register("cell_no")}
+                  onInput={(e) => {
+                    e.currentTarget.value = e.currentTarget.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
+                  }}
+                />
+              </div>
             </div>
+
 
           </div>
 
@@ -251,6 +295,15 @@ export default function AccountsEntry() {
                 placeholder="Optional"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 {...form.register("ntn_number")}
+              />
+            </div>
+
+            <div className="flex-1">
+              <Label className="text-sm">Address</Label>
+              <Input
+                placeholder="Enter address"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("address")}
               />
             </div>
 
@@ -270,14 +323,7 @@ export default function AccountsEntry() {
               </Select>
             </div>
 
-            <div className="flex-1">
-              <Label className="text-sm">Address</Label>
-              <Input
-                placeholder="Enter address"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("address")}
-              />
-            </div>
+            
 
             <div className="flex items-end w-full sm:w-[200px]">
               <Button
