@@ -10,6 +10,7 @@ import {
   orderBy,
   where,
   writeBatch,
+  Timestamp,
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
@@ -21,7 +22,8 @@ const cashbookCollection = collection(db, "cashbook_entries");
 // 🔥 REALTIME LISTENER FOR CASHBOOK ENTRIES
 // --------------------------------------------------
 export function listenCashEntries(callback: (data: any[]) => void) {
-  const q = query(cashbookCollection, orderBy("date", "desc"));
+  // Order by created_at instead of date for proper sorting
+  const q = query(cashbookCollection, orderBy("created_at", "desc"));
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const list = snapshot.docs.map((d) => ({
@@ -51,26 +53,27 @@ export async function createCashEntry(data: any) {
     
     // Calculate new balance
     let newBalance = 0;
-    if (data.pay_status === "CREDIT") {
+    if (data.type === "CREDIT") {
       newBalance = currentBalance + Number(data.amount);
     } else {
       newBalance = currentBalance - Number(data.amount);
     }
 
-    // Prepare cashbook entry
+    // Prepare cashbook entry with entry_by and created_at
     const cashbookPayload = {
       account_id: data.account_id,
       account_name: data.account_name,
       amount: Number(data.amount),
       balance_after: newBalance,
-      type: data.pay_status,
-      date: new Date(data.entry_date),
-      payment_details: data.payment_detail || "",
+      type: data.type,
+      date: data.date instanceof Timestamp ? data.date : Timestamp.fromDate(new Date(data.date)),
+      payment_details: data.payment_details || "",
       remarks: data.remarks || "",
-      invoice_no: data.payment_detail || "",
+      invoice_no: data.payment_details || "",
       reference_type: "MANUAL",
       reference_id: "",
-      created_at: new Date(),
+      created_at: data.created_at instanceof Timestamp ? data.created_at : Timestamp.now(),
+      entry_by: data.entry_by || "Unknown",
       search_keywords: generateKeywords(data.account_name),
     };
 
@@ -107,7 +110,8 @@ export async function createCashEntryFromTransaction(
   referenceType: "IMPORT" | "EXPORT",
   referenceId: string,
   invoiceNo: string,
-  date: Date
+  date: Date,
+  entryBy: string = "System"
 ) {
   try {
     // Get account current balance
@@ -134,13 +138,14 @@ export async function createCashEntryFromTransaction(
       amount,
       balance_after: newBalance,
       type,
-      date,
+      date: Timestamp.fromDate(date),
       payment_details: `${referenceType} ${invoiceNo}`,
       remarks: `Auto-generated from ${referenceType} entry`,
       invoice_no: invoiceNo,
       reference_type: referenceType,
       reference_id: referenceId,
-      created_at: new Date(),
+      created_at: Timestamp.now(),
+      entry_by: entryBy,
       search_keywords: generateKeywords(accountName),
     };
 
@@ -218,7 +223,7 @@ export async function updateCashEntry(id: string, data: any) {
     }
 
     // Apply new transaction
-    if (data.pay_status === "CREDIT") {
+    if (data.type === "CREDIT") {
       currentBalance += Number(data.amount);
     } else {
       currentBalance -= Number(data.amount);
@@ -229,13 +234,23 @@ export async function updateCashEntry(id: string, data: any) {
       account_name: data.account_name,
       amount: Number(data.amount),
       balance_after: currentBalance,
-      date: new Date(data.entry_date),
-      invoice_no: data.payment_detail || "",
-      payment_details: data.payment_detail || "",
+      date: data.date instanceof Timestamp ? data.date : Timestamp.fromDate(new Date(data.date)),
+      invoice_no: data.payment_details || "",
+      payment_details: data.payment_details || "",
       remarks: data.remarks || "",
-      type: data.pay_status,
+      type: data.type,
+      modified_at: data.modified_at || Timestamp.now(),
+      modified_by: data.modified_by || data.entry_by || "Unknown",
       search_keywords: generateKeywords(data.account_name),
     };
+
+    // Preserve original created_at and entry_by
+    if (oldEntry.created_at) {
+      payload.created_at = oldEntry.created_at;
+    }
+    if (oldEntry.entry_by) {
+      payload.entry_by = oldEntry.entry_by;
+    }
 
     // Use batch write
     const batch = writeBatch(db);
