@@ -10,12 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RefreshCw, Trash2, Pencil, Printer } from "lucide-react";
 
 import {
-  listenImportEntries,
-  createImportEntry,
-  updateImportEntryById,
-  deleteImportEntryById,
+  listenInvoiceEntries,
+  createInvoiceEntry,
+  updateInvoiceEntryById,
+  deleteInvoiceEntryById,
   getLastInvoiceNo
-} from "@/services/import.services";
+} from "@/services/invoice.services";
 
 import { listenAccounts } from "@/services/accounts.services";
 
@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function ImportEntryPage() {
+export default function InvoiceEntryPage() {
   const [entries, setEntries] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -46,15 +46,32 @@ export default function ImportEntryPage() {
       vehicle_numbers: "",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
+      bardana: 0,
+      mazdoori: 0,
+      munshiana: 0,
+      charsadna: 0,
+      walai: 0,
+      tol: 0,
     },
   });
 
   const bags = form.watch("bags_qty");
   const weight = form.watch("weight_per_bag");
   const rate = form.watch("rate_per_kg");
+  const bardana = form.watch("bardana");
+  const mazdoori = form.watch("mazdoori");
+  const munshiana = form.watch("munshiana");
+  const charsadna = form.watch("charsadna");
+  const walai = form.watch("walai");
+  const tol = form.watch("tol");
 
   const totalWeight = bags * weight;
-  const amount = totalWeight * rate;
+  const baseAmount = totalWeight * rate;
+  
+  // Calculate final amount with adjustments
+  const totalAdjustments = Number(bardana || 0) + Number(mazdoori || 0) + Number(munshiana || 0) + 
+                          Number(charsadna || 0) + Number(walai || 0) + Number(tol || 0);
+  const finalAmount = baseAmount + totalAdjustments;
 
   useEffect(() => {
       const unsubAcc = listenAccounts((list) => {
@@ -62,7 +79,7 @@ export default function ImportEntryPage() {
           setLoadingAccounts(false);
       });
 
-      const unsubEntries = listenImportEntries((list) => setEntries(list));
+      const unsubEntries = listenInvoiceEntries((list) => setEntries(list));
 
       loadInvoiceNo();
 
@@ -107,14 +124,20 @@ export default function ImportEntryPage() {
       weight_per_bag: data.weight_per_bag,
       rate_per_kg: data.rate_per_kg,
       total_weight: totalWeight,
-      amount: amount,
+      amount: finalAmount,
       vehicle_numbers: data.vehicle_numbers,
       grn_no: data.grn_no,
       entry_date: data.entry_date,
       invoice_no: invoiceNo,
+      bardana: data.bardana || 0,
+      mazdoori: data.mazdoori || 0,
+      munshiana: data.munshiana || 0,
+      charsadna: data.charsadna || 0,
+      walai: data.walai || 0,
+      tol: data.tol || 0,
     };
 
-    await createImportEntry(payload);
+    await createInvoiceEntry(payload);
     generateNextInvoiceNo();
 
     form.reset({
@@ -127,6 +150,12 @@ export default function ImportEntryPage() {
       vehicle_numbers: "",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
+      bardana: 0,
+      mazdoori: 0,
+      munshiana: 0,
+      charsadna: 0,
+      walai: 0,
+      tol: 0,
     });
   };
 
@@ -142,6 +171,12 @@ export default function ImportEntryPage() {
     form.setValue("vehicle_numbers", entry.vehicle_numbers);
     form.setValue("grn_no", entry.grn_no);
     form.setValue("entry_date", entry.entry_date);
+    form.setValue("bardana", entry.bardana || 0);
+    form.setValue("mazdoori", entry.mazdoori || 0);
+    form.setValue("munshiana", entry.munshiana || 0);
+    form.setValue("charsadna", entry.charsadna || 0);
+    form.setValue("walai", entry.walai || 0);
+    form.setValue("tol", entry.tol || 0);
   };
 
   const updateEntry = async (id: string, data: any) => {
@@ -153,13 +188,19 @@ export default function ImportEntryPage() {
       weight_per_bag: data.weight_per_bag,
       rate_per_kg: data.rate_per_kg,
       total_weight: data.bags_qty * data.weight_per_bag,
-      amount: data.bags_qty * data.weight_per_bag * data.rate_per_kg,
+      amount: finalAmount,
       vehicle_numbers: data.vehicle_numbers,
       grn_no: data.grn_no,
       entry_date: data.entry_date,
+      bardana: data.bardana || 0,
+      mazdoori: data.mazdoori || 0,
+      munshiana: data.munshiana || 0,
+      charsadna: data.charsadna || 0,
+      walai: data.walai || 0,
+      tol: data.tol || 0,
     };
 
-    await updateImportEntryById(id, payload);
+    await updateInvoiceEntryById(id, payload);
 
     setEditingId(null);
 
@@ -173,12 +214,18 @@ export default function ImportEntryPage() {
       vehicle_numbers: "",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
+      bardana: 0,
+      mazdoori: 0,
+      munshiana: 0,
+      charsadna: 0,
+      walai: 0,
+      tol: 0,
     });
   };
 
   const deleteEntry = async (id: string) => {
     if (!confirm("Delete this entry?")) return;
-    await deleteImportEntryById(id);
+    await deleteInvoiceEntryById(id);
   };
 
   const filtered = entries.filter(
@@ -196,7 +243,7 @@ export default function ImportEntryPage() {
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
         <CardHeader className="py-2 px-3 sm:px-4">
           <CardTitle className="text-lg sm:text-xl font-bold">
-            Import Entry {editingId ? "(Editing)" : ""}
+            Invoice Entry {editingId ? "(Editing)" : ""}
           </CardTitle>
         </CardHeader>
 
@@ -282,7 +329,72 @@ export default function ImportEntryPage() {
 
           </div>
 
-          {/* Second Row */}
+          {/* Second Row - Additional Adjustment Fields */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+
+            <div>
+              <Label>Bardana</Label>
+              <Input
+                type="number"
+                step="0.01"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("bardana")}
+              />
+            </div>
+
+            <div>
+              <Label>Mazdoori</Label>
+              <Input
+                type="number"
+                step="0.01"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("mazdoori")}
+              />
+            </div>
+
+            <div>
+              <Label>Munshiana</Label>
+              <Input
+                type="number"
+                step="0.01"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("munshiana")}
+              />
+            </div>
+
+            <div>
+              <Label>Charsadna</Label>
+              <Input
+                type="number"
+                step="0.01"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("charsadna")}
+              />
+            </div>
+
+            <div>
+              <Label>Walai</Label>
+              <Input
+                type="number"
+                step="0.01"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("walai")}
+              />
+            </div>
+
+            <div>
+              <Label>Tol</Label>
+              <Input
+                type="number"
+                step="0.01"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("tol")}
+              />
+            </div>
+
+          </div>
+
+          {/* Third Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
             <div className="md:col-span-2">
@@ -321,15 +433,25 @@ export default function ImportEntryPage() {
           </div>
 
           {/* Summary box */}
-          <div className="p-3 bg-white rounded border border-gray-500">
+          <div className="p-3 bg-white rounded border border-gray-500 space-y-1">
             <div className="flex justify-between font-semibold">
               <span>Total Weight:</span>
               <span>{totalWeight.toFixed(3)} KG</span>
             </div>
 
-            <div className="flex justify-between font-semibold">
-              <span>Amount:</span>
-              <span>Rs. {amount.toLocaleString()}</span>
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Base Amount:</span>
+              <span>Rs. {baseAmount.toLocaleString()}</span>
+            </div>
+
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Adjustments:</span>
+              <span>Rs. {totalAdjustments.toLocaleString()}</span>
+            </div>
+
+            <div className="flex justify-between font-bold text-lg border-t pt-1">
+              <span>Final Amount:</span>
+              <span className="text-green-600">Rs. {finalAmount.toLocaleString()}</span>
             </div>
           </div>
 
@@ -342,7 +464,7 @@ export default function ImportEntryPage() {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-              <CardTitle className="text-lg sm:text-xl font-bold">Import Entries</CardTitle>
+              <CardTitle className="text-lg sm:text-xl font-bold">Invoice Entries</CardTitle>
 
               <Input
                 type="text"

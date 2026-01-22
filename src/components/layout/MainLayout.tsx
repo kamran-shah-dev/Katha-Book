@@ -31,7 +31,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Dashboard", icon: LayoutDashboard, path: "/" },
     { name: "Accounts", icon: Users, path: "/accounts" },
     { name: "Cashbook", icon: BookOpen, path: "/cashbook" },
-    { name: "Import", icon: Truck, path: "/goods-received" },
+    { name: "Invoices", icon: Truck, path: "/goods-received" },
     // { name: "Export", icon: FolderSearch, path: "/export" },
 
     {
@@ -41,8 +41,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
       open: openReports,
       children: [
         { name: "Cashbook Report", path: "/reports/cashbook" },
-        { name: "Account Ledger", path: "/reports/ledger" },
-        { name: "Credit & Debit Report", path: "/reports/credit-debit" }
+        { name: "Account Ledger", path: "/reports/ledger" }
+        // { name: "Credit & Debit Report", path: "/reports/credit-debit" }
       ],
     },
   ];

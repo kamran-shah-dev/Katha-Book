@@ -14,12 +14,12 @@ import {
 import { db } from "@/firebaseConfig";
 import { createCashEntryFromTransaction } from "./cashbook.services";
 
-const importCollection = collection(db, "import_entries");
+const invoiceCollection = collection(db, "invoice_entries");
 
 // 🔥 REALTIME LISTENER
-export function listenImportEntries(callback: (list: any[]) => void) {
+export function listenInvoiceEntries(callback: (list: any[]) => void) {
   return onSnapshot(
-    query(importCollection, orderBy("entry_date", "desc")),
+    query(invoiceCollection, orderBy("entry_date", "desc")),
     (snap) => {
       const formatted = snap.docs.map((d) => ({
         id: d.id,
@@ -35,8 +35,8 @@ export function listenImportEntries(callback: (list: any[]) => void) {
   );
 }
 
-// 🔥 CREATE IMPORT ENTRY + AUTO CASHBOOK
-export async function createImportEntry(data: any) {
+// 🔥 CREATE INVOICE ENTRY + AUTO CASHBOOK
+export async function createInvoiceEntry(data: any) {
   try {
     const payload = {
       account_id: data.account_id || "",
@@ -52,27 +52,34 @@ export async function createImportEntry(data: any) {
       invoice_no: data.invoice_no,
       entry_date: new Date(data.entry_date),
       created_at: new Date(),
+      // Additional adjustment fields
+      bardana: Number(data.bardana || 0),
+      mazdoori: Number(data.mazdoori || 0),
+      munshiana: Number(data.munshiana || 0),
+      charsadna: Number(data.charsadna || 0),
+      walai: Number(data.walai || 0),
+      tol: Number(data.tol || 0),
       search_keywords: generateKeywords(data.account_name),
     };
 
-    const docRef = await addDoc(importCollection, payload);
-    const importId = docRef.id;
+    const docRef = await addDoc(invoiceCollection, payload);
+    const invoiceId = docRef.id;
 
-    // Auto cashbook entry (DEBIT)
+    // Auto cashbook entry (DEBIT) - uses final amount with adjustments
     await createCashEntryFromTransaction(
       data.account_id,
       data.account_name,
       Number(data.amount),
       "DEBIT",
       "IMPORT",
-      importId,
+      invoiceId,
       data.invoice_no,
       new Date(data.entry_date)
     );
 
-    return importId;
+    return invoiceId;
   } catch (error) {
-    console.error("Error creating import entry:", error);
+    console.error("Error creating invoice entry:", error);
     throw error;
   }
 }
@@ -85,14 +92,14 @@ function generateKeywords(name: string) {
 
 // 🔥 GET LAST INVOICE NUMBER
 export async function getLastInvoiceNo() {
-  const q = query(importCollection, orderBy("invoice_no", "desc"), limit(1));
+  const q = query(invoiceCollection, orderBy("invoice_no", "desc"), limit(1));
   const snap = await getDocs(q);
   return snap.empty ? "IMP000" : snap.docs[0].data().invoice_no;
 }
 
-// 🔥 UPDATE IMPORT ENTRY
-export async function updateImportEntryById(id: string, data: any) {
-  const ref = doc(db, "import_entries", id);
+// 🔥 UPDATE INVOICE ENTRY
+export async function updateInvoiceEntryById(id: string, data: any) {
+  const ref = doc(db, "invoice_entries", id);
 
   const payload = {
     account_id: data.account_id,
@@ -106,6 +113,13 @@ export async function updateImportEntryById(id: string, data: any) {
     vehicle_numbers: data.vehicle_numbers,
     grn_no: data.grn_no,
     entry_date: new Date(data.entry_date),
+    // Additional adjustment fields
+    bardana: Number(data.bardana || 0),
+    mazdoori: Number(data.mazdoori || 0),
+    munshiana: Number(data.munshiana || 0),
+    charsadna: Number(data.charsadna || 0),
+    walai: Number(data.walai || 0),
+    tol: Number(data.tol || 0),
     search_keywords: generateKeywords(data.account_name),
   };
 
@@ -114,8 +128,8 @@ export async function updateImportEntryById(id: string, data: any) {
 }
 
 // 🔥 DELETE ENTRY
-export async function deleteImportEntryById(id: string) {
-  const ref = doc(db, "import_entries", id);
+export async function deleteInvoiceEntryById(id: string) {
+  const ref = doc(db, "invoice_entries", id);
   await deleteDoc(ref);
   return true;
 }
