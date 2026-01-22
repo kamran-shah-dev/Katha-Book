@@ -316,7 +316,7 @@ export default function InvoiceEntryPage() {
             </div>
 
             <div className="space-y-1">
-              <Label>Quantity</Label>
+              <Label>Unit Type</Label>
 
               <div className="flex">
                 {/* Unit dropdown */}
