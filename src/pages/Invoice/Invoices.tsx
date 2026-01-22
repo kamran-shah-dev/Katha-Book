@@ -318,27 +318,16 @@ export default function InvoiceEntryPage() {
             <div className="space-y-1">
               <Label>Unit Type</Label>
 
-              <div className="flex">
-                {/* Unit dropdown */}
-                <select
-                  className="h-9 px-3 border-2 border-black border-r-0 rounded-l-md focus:outline-none"
-                  {...form.register("weight_unit")}
-                >
-                  <option value="kg">KG</option>
-                  <option value="litre">Litre</option>
-                  <option value="bags">Bags</option>
-                </select>
-
-                {/* Number input */}
-                <Input
-                  type="number"
-                  step="0.001"
-                  placeholder="Enter amount"
-                  className="h-9 border-2 border-black rounded-l-none focus:outline-none focus:ring-0 focus-visible:ring-0"
-                  {...form.register("weight_per_bag")}
-                />
-              </div>
+              <select
+                className="h-9 w-full px-3 border-2 border-black rounded-md focus:outline-none"
+                {...form.register("weight_unit")}
+              >
+                <option value="kg">KG</option>
+                <option value="litre">Litre</option>
+                <option value="bags">Bags</option>
+              </select>
             </div>
+
 
 
             <div>
