@@ -24,8 +24,8 @@ export default function Dashboard() {
     todayCredit: 0,
     todayDebit: 0,
     cashInHand: 0,
-    todayImportCount: 0,
-    todayImportTotal: 0,
+    todayInvoiceCount: 0,
+    todayInvoiceTotal: 0,
     // todayExportCount: 0,
     // todayExportTotal: 0,
     totalAccounts: 0,
@@ -126,23 +126,23 @@ export default function Dashboard() {
 
       </div>
 
-      {/* IMPORT/EXPORT & ACCOUNTS - ROW 2 */}
+      {/* INVOICE & ACCOUNTS - ROW 2 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-        {/* Total Imports (Today) */}
+        {/* Total Invoices (Today) */}
         <Card className="border-l-4 border-orange-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
               <FileInput className="h-4 w-4" />
-              Total Imports (Today)
+              Total Invoices (Today)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-bold text-orange-600">
-              {stats.todayImportCount} Entries
+              {stats.todayInvoiceCount} Entries
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              Rs. {stats.todayImportTotal.toLocaleString()}
+              Rs. {stats.todayInvoiceTotal.toLocaleString()}
             </p>
           </CardContent>
         </Card>

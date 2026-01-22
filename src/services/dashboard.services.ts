@@ -15,8 +15,7 @@ export async function getDashboardTotals() {
     // ---------------------------
     const [
       cashSnap,
-      importSnap,
-      exportSnap,
+      invoiceSnap,
       accountsSnap
     ] = await Promise.all([
       getDocs(
@@ -28,14 +27,7 @@ export async function getDashboardTotals() {
       ),
       getDocs(
         query(
-          collection(db, "import_entries"),
-          where("entry_date", ">=", startTS),
-          where("entry_date", "<=", endTS)
-        )
-      ),
-      getDocs(
-        query(
-          collection(db, "export_entries"),
+          collection(db, "invoice_entries"),
           where("entry_date", ">=", startTS),
           where("entry_date", "<=", endTS)
         )
@@ -59,20 +51,12 @@ export async function getDashboardTotals() {
     const cashInHand = todayCredit - todayDebit;
 
     // ---------------------------
-    // 🔥 IMPORT TOTALS
+    // 🔥 INVOICE TOTALS
     // ---------------------------
-    let todayImportTotal = 0;
-    importSnap.forEach((d) => {
-      todayImportTotal += Number(d.data().amount || 0);
+    let todayInvoiceTotal = 0;
+    invoiceSnap.forEach((d) => {
+      todayInvoiceTotal += Number(d.data().amount || 0);
     });
-
-    // ---------------------------
-    // 🔥 EXPORT TOTALS
-    // ---------------------------
-      // let todayExportTotal = 0;
-      // exportSnap.forEach((d) => {
-      //   todayExportTotal += Number(d.data().amount || 0);
-      // });
 
     // ---------------------------
     // 🔥 ACCOUNT SUMMARY
@@ -96,11 +80,8 @@ export async function getDashboardTotals() {
       todayDebit,
       cashInHand,
 
-      todayImportCount: importSnap.size,
-      todayImportTotal,
-
-      todayExportCount: exportSnap.size,
-      // todayExportTotal,
+      todayInvoiceCount: invoiceSnap.size,
+      todayInvoiceTotal,
 
       // ALL TIME
       totalAccounts: accountsSnap.size,
@@ -109,6 +90,17 @@ export async function getDashboardTotals() {
     };
   } catch (error) {
     console.error("Dashboard Totals Error:", error);
-    return null;
+    // Return default values instead of null to prevent errors
+    return {
+      todayCashbookCount: 0,
+      todayCredit: 0,
+      todayDebit: 0,
+      cashInHand: 0,
+      todayInvoiceCount: 0,
+      todayInvoiceTotal: 0,
+      totalAccounts: 0,
+      activeAccounts: 0,
+      inactiveAccounts: 0
+    };
   }
 }
