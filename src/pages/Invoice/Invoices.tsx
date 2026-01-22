@@ -40,22 +40,24 @@ export default function InvoiceEntryPage() {
       account_id: "",
       account_name: "",
       supplier: "",
-      bags_qty: 0,
-      weight_per_bag: 0,
-      rate_per_kg: 0,
+      bags_qty: undefined,
+      weight_per_bag: undefined,
+      rate_per_kg: undefined,
       vehicle_numbers: "",
+      weight_unit: "",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
-      bardana: 0,
-      mazdoori: 0,
-      munshiana: 0,
-      charsadna: 0,
-      walai: 0,
-      tol: 0,
+      bardana: undefined,
+      mazdoori: undefined,
+      munshiana: undefined,
+      charsadna: undefined,
+      walai: undefined,
+      tol: undefined,
     },
   });
 
   const bags = form.watch("bags_qty");
+  const unit = form.watch("weight_unit") || "kg";
   const weight = form.watch("weight_per_bag");
   const rate = form.watch("rate_per_kg");
   const bardana = form.watch("bardana");
@@ -72,6 +74,12 @@ export default function InvoiceEntryPage() {
   const totalAdjustments = Number(bardana || 0) + Number(mazdoori || 0) + Number(munshiana || 0) + 
                           Number(charsadna || 0) + Number(walai || 0) + Number(tol || 0);
   const finalAmount = baseAmount + totalAdjustments;
+
+  const unitLabelMap: Record<string, string> = {
+    kg: "KG",
+    litre: "Litre",
+    bags: "Bags",
+  };
 
   useEffect(() => {
       const unsubAcc = listenAccounts((list) => {
@@ -299,7 +307,7 @@ export default function InvoiceEntryPage() {
             </div>
 
             <div>
-              <Label>Bags Qty</Label>
+              <Label>Quantity</Label>
               <Input
                 type="number"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -307,18 +315,34 @@ export default function InvoiceEntryPage() {
               />
             </div>
 
-            <div>
-              <Label>Weight/Bag (KG)</Label>
-              <Input
-                type="number"
-                step="0.001"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("weight_per_bag")}
-              />
+            <div className="space-y-1">
+              <Label>Quantity</Label>
+
+              <div className="flex">
+                {/* Unit dropdown */}
+                <select
+                  className="h-9 px-3 border-2 border-black border-r-0 rounded-l-md focus:outline-none"
+                  {...form.register("weight_unit")}
+                >
+                  <option value="kg">KG</option>
+                  <option value="litre">Litre</option>
+                  <option value="bags">Bags</option>
+                </select>
+
+                {/* Number input */}
+                <Input
+                  type="number"
+                  step="0.001"
+                  placeholder="Enter amount"
+                  className="h-9 border-2 border-black rounded-l-none focus:outline-none focus:ring-0 focus-visible:ring-0"
+                  {...form.register("weight_per_bag")}
+                />
+              </div>
             </div>
 
+
             <div>
-              <Label>Rate/KG</Label>
+              <Label>Rate</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -436,7 +460,7 @@ export default function InvoiceEntryPage() {
           <div className="p-3 bg-white rounded border border-gray-500 space-y-1">
             <div className="flex justify-between font-semibold">
               <span>Total Weight:</span>
-              <span>{totalWeight.toFixed(3)} KG</span>
+              <span>{totalWeight.toFixed(0)} {unitLabelMap[unit]}</span>
             </div>
 
             <div className="flex justify-between text-sm text-gray-600">
