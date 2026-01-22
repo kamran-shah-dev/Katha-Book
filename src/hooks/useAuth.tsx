@@ -58,10 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (userSnap.exists()) {
         const userData = userSnap.data();
-        setUserName(userData.name || "Unknown");
+        const name = userData.name || "Unknown";
+        
+        setUserName(name);
         setUserId(phone);
-        sessionStorage.setItem("authUser", phone); // Changed to sessionStorage
         setIsLoggedIn(true);
+        sessionStorage.setItem("authUser", phone);
+        
+        console.log("Login successful:", { phone, name }); // Debug
+      } else {
+        throw new Error("User document not found");
       }
     } catch (error) {
       console.error("Error during login:", error);

@@ -17,7 +17,7 @@ import { db } from "@/firebaseConfig";
 
 import bcrypt from "bcryptjs";
 import { Eye, EyeOff } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";   // ✅ IMPORT THIS
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Auth() {
   const [phone, setPhone] = useState("");
@@ -28,7 +28,7 @@ export default function Auth() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
-  const { login } = useAuth();   // ✅ GET login() from context
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +56,10 @@ export default function Auth() {
         return;
       }
 
-      // ✅ CALL CONTEXT LOGIN (updates auth state properly)
-      login(phone);
+      // ✅ AWAIT the login function
+      await login(phone);
+
+      console.log("Login complete, navigating to dashboard...");
 
       // Redirect to dashboard
       navigate("/dashboard", { replace: true });
@@ -65,9 +67,8 @@ export default function Auth() {
     } catch (error) {
       console.error("Login error:", error);
       setErrorMsg("Something went wrong. Try again.");
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
