@@ -40,39 +40,39 @@ export default function InvoiceEntryPage() {
       account_id: "",
       account_name: "",
       supplier: "",
-      bags_qty: undefined,
-      weight_per_bag: undefined,
-      rate_per_kg: undefined,
+      bags_qty: 0,
+      weight_per_bag: 0,
+      rate_per_kg: 0,
       vehicle_numbers: "",
-      weight_unit: "",
+      weight_unit: "kg",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
-      bardana: undefined,
-      mazdoori: undefined,
-      munshiana: undefined,
-      charsadna: undefined,
-      walai: undefined,
-      tol: undefined,
+      bardana: 0,
+      mazdoori: 0,
+      munshiana: 0,
+      charsadna: 0,
+      walai: 0,
+      tol: 0,
     },
   });
 
-  const bags = form.watch("bags_qty");
+  const bags = Number(form.watch("bags_qty")) || 0;
   const unit = form.watch("weight_unit") || "kg";
-  const weight = form.watch("weight_per_bag");
-  const rate = form.watch("rate_per_kg");
-  const bardana = form.watch("bardana");
-  const mazdoori = form.watch("mazdoori");
-  const munshiana = form.watch("munshiana");
-  const charsadna = form.watch("charsadna");
-  const walai = form.watch("walai");
-  const tol = form.watch("tol");
+  const weight = Number(form.watch("weight_per_bag")) || 0;
+  const rate = Number(form.watch("rate_per_kg")) || 0;
+  const bardana = Number(form.watch("bardana")) || 0;
+  const mazdoori = Number(form.watch("mazdoori")) || 0;
+  const munshiana = Number(form.watch("munshiana")) || 0;
+  const charsadna = Number(form.watch("charsadna")) || 0;
+  const walai = Number(form.watch("walai")) || 0;
+  const tol = Number(form.watch("tol")) || 0;
 
-  const totalWeight = bags * weight;
+  // Calculate total weight based on unit type
+  const totalWeight = unit === "bags" ? bags * weight : bags;
   const baseAmount = totalWeight * rate;
   
   // Calculate final amount with adjustments
-  const totalAdjustments = Number(bardana || 0) + Number(mazdoori || 0) + Number(munshiana || 0) + 
-                          Number(charsadna || 0) + Number(walai || 0) + Number(tol || 0);
+  const totalAdjustments = bardana + mazdoori + munshiana + charsadna + walai + tol;
   const finalAmount = baseAmount + totalAdjustments;
 
   const unitLabelMap: Record<string, string> = {
@@ -128,21 +128,22 @@ export default function InvoiceEntryPage() {
       account_id: data.account_id,
       account_name: data.account_name,
       supplier: data.supplier,
-      bags_qty: data.bags_qty,
-      weight_per_bag: data.weight_per_bag,
-      rate_per_kg: data.rate_per_kg,
+      bags_qty: Number(data.bags_qty) || 0,
+      weight_per_bag: Number(data.weight_per_bag) || 0,
+      weight_unit: data.weight_unit || "kg",
+      rate_per_kg: Number(data.rate_per_kg) || 0,
       total_weight: totalWeight,
       amount: finalAmount,
       vehicle_numbers: data.vehicle_numbers,
       grn_no: data.grn_no,
       entry_date: data.entry_date,
       invoice_no: invoiceNo,
-      bardana: data.bardana || 0,
-      mazdoori: data.mazdoori || 0,
-      munshiana: data.munshiana || 0,
-      charsadna: data.charsadna || 0,
-      walai: data.walai || 0,
-      tol: data.tol || 0,
+      bardana: Number(data.bardana) || 0,
+      mazdoori: Number(data.mazdoori) || 0,
+      munshiana: Number(data.munshiana) || 0,
+      charsadna: Number(data.charsadna) || 0,
+      walai: Number(data.walai) || 0,
+      tol: Number(data.tol) || 0,
     };
 
     await createInvoiceEntry(payload);
@@ -156,6 +157,7 @@ export default function InvoiceEntryPage() {
       weight_per_bag: 0,
       rate_per_kg: 0,
       vehicle_numbers: "",
+      weight_unit: "kg",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
       bardana: 0,
@@ -174,7 +176,8 @@ export default function InvoiceEntryPage() {
     form.setValue("account_name", entry.account_name);
     form.setValue("supplier", entry.supplier);
     form.setValue("bags_qty", entry.bags_qty);
-    form.setValue("weight_per_bag", entry.weight_per_bag);
+    form.setValue("weight_per_bag", entry.weight_per_bag || 0);
+    form.setValue("weight_unit", entry.weight_unit || "kg");
     form.setValue("rate_per_kg", entry.rate_per_kg);
     form.setValue("vehicle_numbers", entry.vehicle_numbers);
     form.setValue("grn_no", entry.grn_no);
@@ -192,20 +195,21 @@ export default function InvoiceEntryPage() {
       account_id: data.account_id,
       account_name: data.account_name,
       supplier: data.supplier,
-      bags_qty: data.bags_qty,
-      weight_per_bag: data.weight_per_bag,
-      rate_per_kg: data.rate_per_kg,
-      total_weight: data.bags_qty * data.weight_per_bag,
+      bags_qty: Number(data.bags_qty) || 0,
+      weight_per_bag: Number(data.weight_per_bag) || 0,
+      weight_unit: data.weight_unit || "kg",
+      rate_per_kg: Number(data.rate_per_kg) || 0,
+      total_weight: totalWeight,
       amount: finalAmount,
       vehicle_numbers: data.vehicle_numbers,
       grn_no: data.grn_no,
       entry_date: data.entry_date,
-      bardana: data.bardana || 0,
-      mazdoori: data.mazdoori || 0,
-      munshiana: data.munshiana || 0,
-      charsadna: data.charsadna || 0,
-      walai: data.walai || 0,
-      tol: data.tol || 0,
+      bardana: Number(data.bardana) || 0,
+      mazdoori: Number(data.mazdoori) || 0,
+      munshiana: Number(data.munshiana) || 0,
+      charsadna: Number(data.charsadna) || 0,
+      walai: Number(data.walai) || 0,
+      tol: Number(data.tol) || 0,
     };
 
     await updateInvoiceEntryById(id, payload);
@@ -220,6 +224,7 @@ export default function InvoiceEntryPage() {
       weight_per_bag: 0,
       rate_per_kg: 0,
       vehicle_numbers: "",
+      weight_unit: "kg",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
       bardana: 0,
@@ -238,10 +243,10 @@ export default function InvoiceEntryPage() {
 
   const filtered = entries.filter(
     (e) =>
-      e.account_name.toLowerCase().includes(search.toLowerCase()) ||
-      e.supplier.toLowerCase().includes(search.toLowerCase()) ||
-      e.vehicle_numbers.toLowerCase().includes(search.toLowerCase()) ||
-      e.invoice_no.toLowerCase().includes(search.toLowerCase())
+      e.account_name?.toLowerCase().includes(search.toLowerCase()) ||
+      e.supplier?.toLowerCase().includes(search.toLowerCase()) ||
+      e.vehicle_numbers?.toLowerCase().includes(search.toLowerCase()) ||
+      e.invoice_no?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -307,17 +312,7 @@ export default function InvoiceEntryPage() {
             </div>
 
             <div>
-              <Label>Quantity</Label>
-              <Input
-                type="number"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("bags_qty")}
-              />
-            </div>
-
-            <div className="space-y-1">
               <Label>Unit Type</Label>
-
               <select
                 className="h-9 w-full px-3 border-2 border-black rounded-md focus:outline-none"
                 {...form.register("weight_unit")}
@@ -328,7 +323,28 @@ export default function InvoiceEntryPage() {
               </select>
             </div>
 
+            <div>
+              <Label>{unit === "bags" ? "Number of Bags" : `Quantity (${unitLabelMap[unit]})`}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                {...form.register("bags_qty", { valueAsNumber: true })}
+              />
+            </div>
 
+            {unit === "bags" && (
+              <div>
+                <Label>Weight Per Bag (KG)</Label>
+                <Input
+                  type="number"
+                  step="0.001"
+                  placeholder="Enter weight"
+                  className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  {...form.register("weight_per_bag", { valueAsNumber: true })}
+                />
+              </div>
+            )}
 
             <div>
               <Label>Rate</Label>
@@ -336,7 +352,7 @@ export default function InvoiceEntryPage() {
                 type="number"
                 step="0.01"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("rate_per_kg")}
+                {...form.register("rate_per_kg", { valueAsNumber: true })}
               />
             </div>
 
@@ -351,7 +367,7 @@ export default function InvoiceEntryPage() {
                 type="number"
                 step="0.01"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("bardana")}
+                {...form.register("bardana", { valueAsNumber: true })}
               />
             </div>
 
@@ -361,7 +377,7 @@ export default function InvoiceEntryPage() {
                 type="number"
                 step="0.01"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("mazdoori")}
+                {...form.register("mazdoori", { valueAsNumber: true })}
               />
             </div>
 
@@ -371,7 +387,7 @@ export default function InvoiceEntryPage() {
                 type="number"
                 step="0.01"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("munshiana")}
+                {...form.register("munshiana", { valueAsNumber: true })}
               />
             </div>
 
@@ -381,7 +397,7 @@ export default function InvoiceEntryPage() {
                 type="number"
                 step="0.01"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("charsadna")}
+                {...form.register("charsadna", { valueAsNumber: true })}
               />
             </div>
 
@@ -391,7 +407,7 @@ export default function InvoiceEntryPage() {
                 type="number"
                 step="0.01"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("walai")}
+                {...form.register("walai", { valueAsNumber: true })}
               />
             </div>
 
@@ -401,7 +417,7 @@ export default function InvoiceEntryPage() {
                 type="number"
                 step="0.01"
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("tol")}
+                {...form.register("tol", { valueAsNumber: true })}
               />
             </div>
 
@@ -449,22 +465,22 @@ export default function InvoiceEntryPage() {
           <div className="p-3 bg-white rounded border border-gray-500 space-y-1">
             <div className="flex justify-between font-semibold">
               <span>Total Weight:</span>
-              <span>{totalWeight.toFixed(0)} {unitLabelMap[unit]}</span>
+              <span>{totalWeight.toFixed(2)} {unit === "bags" ? "KG" : unitLabelMap[unit]}</span>
             </div>
 
             <div className="flex justify-between text-sm text-gray-600">
               <span>Base Amount:</span>
-              <span>Rs. {baseAmount.toLocaleString()}</span>
+              <span>Rs. {baseAmount.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between text-sm text-gray-600">
               <span>Adjustments:</span>
-              <span>Rs. {totalAdjustments.toLocaleString()}</span>
+              <span>Rs. {totalAdjustments.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between font-bold text-lg border-t pt-1">
               <span>Final Amount:</span>
-              <span className="text-green-600">Rs. {finalAmount.toLocaleString()}</span>
+              <span className="text-green-600">Rs. {finalAmount.toFixed(2)}</span>
             </div>
           </div>
 
@@ -535,19 +551,21 @@ export default function InvoiceEntryPage() {
 
                   <div className="grid grid-cols-2 gap-3 mt-2 pt-2 border-t">
                     <div>
-                      <p className="text-xs text-gray-500">Bags</p>
+                      <p className="text-xs text-gray-500">Quantity</p>
                       <p className="font-semibold text-sm">{entry.bags_qty}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Weight</p>
-                      <p className="font-semibold text-sm">{entry.total_weight.toFixed(2)} KG</p>
+                      <p className="text-xs text-gray-500">Total Weight</p>
+                      <p className="font-semibold text-sm">
+                        {entry.total_weight?.toFixed(2)} {entry.weight_unit === "bags" ? "KG" : unitLabelMap[entry.weight_unit || "kg"]}
+                      </p>
                     </div>
                   </div>
 
                   <div className="mt-2 pt-2 border-t">
                     <p className="text-xs text-gray-500">Amount</p>
                     <p className="font-bold text-base text-green-600">
-                      Rs. {entry.amount.toLocaleString()}
+                      Rs. {entry.amount?.toLocaleString()}
                     </p>
                   </div>
 
@@ -606,8 +624,8 @@ export default function InvoiceEntryPage() {
                   <TableHead className="border-r">Date</TableHead>
                   <TableHead className="border-r">Account</TableHead>
                   <TableHead className="border-r">Product</TableHead>
-                  <TableHead className="border-r text-right">Bags</TableHead>
-                  <TableHead className="border-r text-right">Weight</TableHead>
+                  <TableHead className="border-r text-right">Quantity</TableHead>
+                  <TableHead className="border-r text-right">Total Weight</TableHead>
                   <TableHead className="border-r text-right">Amount</TableHead>
                   <TableHead className="text-center">Action</TableHead>
                 </TableRow>
@@ -628,8 +646,10 @@ export default function InvoiceEntryPage() {
                     <TableCell>{entry.account_name}</TableCell>
                     <TableCell>{entry.supplier}</TableCell>
                     <TableCell className="text-right">{entry.bags_qty}</TableCell>
-                    <TableCell className="text-right">{entry.total_weight.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{entry.amount.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">
+                      {entry.total_weight?.toFixed(2)} {entry.weight_unit === "bags" ? "KG" : unitLabelMap[entry.weight_unit || "kg"]}
+                    </TableCell>
+                    <TableCell className="text-right">{entry.amount?.toLocaleString()}</TableCell>
 
                     <TableCell className="flex gap-2 justify-center">
                       <Button size="sm" className="bg-[#0A2A43] text-white" onClick={() => handleEdit(entry)}>
