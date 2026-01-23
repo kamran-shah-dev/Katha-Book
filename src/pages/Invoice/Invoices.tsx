@@ -40,19 +40,19 @@ export default function InvoiceEntryPage() {
       account_id: "",
       account_name: "",
       supplier: "",
-      bags_qty: 0,
-      weight_per_bag: 0,
-      rate_per_kg: 0,
+      bags_qty: undefined,
+      weight_per_bag: undefined,
+      rate_per_kg: undefined,
       vehicle_numbers: "",
       weight_unit: "kg",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
-      bardana: 0,
-      mazdoori: 0,
-      munshiana: 0,
-      charsadna: 0,
-      walai: 0,
-      tol: 0,
+      bardana: undefined,
+      mazdoori: undefined,
+      munshiana: undefined,
+      charsadna: undefined,
+      walai: undefined,
+      tol: undefined,
     },
   });
 
@@ -181,7 +181,13 @@ export default function InvoiceEntryPage() {
     form.setValue("rate_per_kg", entry.rate_per_kg);
     form.setValue("vehicle_numbers", entry.vehicle_numbers);
     form.setValue("grn_no", entry.grn_no);
-    form.setValue("entry_date", entry.entry_date);
+    
+    // Convert entry_date to yyyy-MM-dd format
+    const dateValue = entry.entry_date?.toDate 
+      ? format(entry.entry_date.toDate(), "yyyy-MM-dd")
+      : format(new Date(entry.entry_date), "yyyy-MM-dd");
+    form.setValue("entry_date", dateValue);
+    
     form.setValue("bardana", entry.bardana || 0);
     form.setValue("mazdoori", entry.mazdoori || 0);
     form.setValue("munshiana", entry.munshiana || 0);

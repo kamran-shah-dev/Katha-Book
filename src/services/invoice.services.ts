@@ -9,6 +9,7 @@ import {
   orderBy,
   limit,
   onSnapshot,
+  Timestamp,
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
@@ -51,8 +52,8 @@ export async function createInvoiceEntry(data: any) {
       vehicle_numbers: data.vehicle_numbers || "",
       grn_no: data.grn_no || "",
       invoice_no: data.invoice_no,
-      entry_date: new Date(data.entry_date),
-      created_at: new Date(),
+      entry_date: Timestamp.fromDate(new Date(data.entry_date)),
+      created_at: Timestamp.now(),
       // Additional adjustment fields
       bardana: Number(data.bardana || 0),
       mazdoori: Number(data.mazdoori || 0),
@@ -114,7 +115,7 @@ export async function updateInvoiceEntryById(id: string, data: any) {
     amount: Number(data.amount),
     vehicle_numbers: data.vehicle_numbers,
     grn_no: data.grn_no,
-    entry_date: new Date(data.entry_date),
+    entry_date: Timestamp.fromDate(new Date(data.entry_date)),
     // Additional adjustment fields
     bardana: Number(data.bardana || 0),
     mazdoori: Number(data.mazdoori || 0),

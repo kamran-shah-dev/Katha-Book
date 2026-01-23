@@ -19,6 +19,7 @@ import * as XLSX from "xlsx";
 type ExcelRow = {
   "S.No": number | "";
   "Date": string;
+  "Account Name": string;
   "Detail": string;
   "Credit": string;
   "Debit": string;
@@ -27,37 +28,17 @@ type ExcelRow = {
 
 
 export default function CashbookReport() {
-  const [accounts, setAccounts] = useState([]);
-  const [selectedAccountId, setSelectedAccountId] = useState("");
-  const [selectedAccount, setSelectedAccount] = useState(null);
   const [rows, setRows] = useState([]);
 
-  const [fromDate, setFromDate] = useState(
-    format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd")
-  );
+  const [fromDate, setFromDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [toDate, setToDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   const printRef = useRef<HTMLDivElement>(null);
 
-  // Load Accounts
-  useEffect(() => {
-    const loadAccounts = async () => {
-      const snap = await getDocs(collection(db, "accounts"));
-      setAccounts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    };
-    loadAccounts();
-  }, []);
-
   // Generate Report
   const generateReport = async () => {
-    if (!selectedAccountId) return alert("Select an account!");
-
-    const acc = accounts.find((a) => a.id === selectedAccountId);
-    setSelectedAccount(acc);
-
     const q = query(
       collection(db, "cashbook_entries"),
-      where("account_id", "==", selectedAccountId),
       where("date", ">=", new Date(fromDate)),
       where("date", "<=", new Date(toDate)),
       orderBy("date", "asc"),
@@ -71,6 +52,7 @@ export default function CashbookReport() {
 
       return {
         date: entry.date.toDate(),
+        account_name: entry.account_name || "-",
         detail: entry.payment_details || "-",
         credit: entry.type === "CREDIT" ? entry.amount : 0,
         debit: entry.type === "DEBIT" ? entry.amount : 0
@@ -94,6 +76,7 @@ export default function CashbookReport() {
       return {
         "S.No": i + 1,
         "Date": format(new Date(r.date), "dd-MM-yyyy"),
+        "Account Name": r.account_name,
         "Detail": r.detail,
         "Credit": r.credit ? r.credit.toFixed(2) : "0.00",
         "Debit": r.debit ? r.debit.toFixed(2) : "0.00",
@@ -102,10 +85,10 @@ export default function CashbookReport() {
     });
 
     // Add summary rows
-    // excelData.push({});
     excelData.push({
       "S.No": "",
       "Date": "",
+      "Account Name": "",
       "Detail": "Total Credit",
       "Credit": totalCredit.toFixed(2),
       "Debit": "",
@@ -114,6 +97,7 @@ export default function CashbookReport() {
     excelData.push({
       "S.No": "",
       "Date": "",
+      "Account Name": "",
       "Detail": "Total Debit",
       "Credit": "",
       "Debit": totalDebit.toFixed(2),
@@ -122,6 +106,7 @@ export default function CashbookReport() {
     excelData.push({
       "S.No": "",
       "Date": "",
+      "Account Name": "",
       "Detail": "Cash In Hand",
       "Credit": "",
       "Debit": "",
@@ -132,7 +117,7 @@ export default function CashbookReport() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Cashbook Report");
 
-    const filename = `Cashbook_${selectedAccount?.account_name}_${format(new Date(fromDate), "dd-MMM-yyyy")}_to_${format(new Date(toDate), "dd-MMM-yyyy")}.xlsx`;
+    const filename = `Cashbook_All_Accounts_${format(new Date(fromDate), "dd-MMM-yyyy")}_to_${format(new Date(toDate), "dd-MMM-yyyy")}.xlsx`;
     XLSX.writeFile(wb, filename);
   };
 
@@ -145,7 +130,7 @@ export default function CashbookReport() {
     win.document.write(`
       <html>
       <head>
-        <title>Cashbook Report - ${selectedAccount?.account_name}</title>
+        <title>Cashbook Report - All Accounts</title>
         <style>
           @media print {
             @page { 
@@ -311,7 +296,7 @@ export default function CashbookReport() {
 
         <!-- REPORT TITLE -->
         <div class="report-title">
-          <h2>Cashbook Report - ${selectedAccount?.account_name} From: ${format(new Date(fromDate), "dd-MMM-yyyy")} To: ${format(new Date(toDate), "dd-MMM-yyyy")}</h2>
+          <h2>Cashbook Report - All Accounts From: ${format(new Date(fromDate), "dd-MMM-yyyy")} To: ${format(new Date(toDate), "dd-MMM-yyyy")}</h2>
         </div>
 
         <!-- TABLE -->
@@ -320,6 +305,7 @@ export default function CashbookReport() {
             <tr>
               <th style="width: 50px;">S.No</th>
               <th style="width: 100px;">Date</th>
+              <th style="width: 150px;">Account Name</th>
               <th>Detail</th>
               <th style="width: 100px;">Credit</th>
               <th style="width: 100px;">Debit</th>
@@ -337,7 +323,7 @@ export default function CashbookReport() {
               if (isDateRow && i > 0) {
                 html += `
                   <tr class="date-row">
-                    <td colspan="6" style="text-align: center; font-weight: bold;">
+                    <td colspan="7" style="text-align: center; font-weight: bold;">
                       ${format(new Date(r.date), "dd-MM-yyyy")}
                     </td>
                   </tr>
@@ -348,6 +334,7 @@ export default function CashbookReport() {
                 <tr>
                   <td style="text-align: center;">${i + 1}</td>
                   <td style="text-align: center;">${format(new Date(r.date), "dd-MM-yyyy")}</td>
+                  <td>${r.account_name}</td>
                   <td>${r.detail}</td>
                   <td style="text-align: right;">${r.credit ? r.credit.toFixed(2) : "0.00"}</td>
                   <td style="text-align: right;">${r.debit ? r.debit.toFixed(2) : "0.00"}</td>
@@ -378,38 +365,21 @@ export default function CashbookReport() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Cashbook Report</h1>
+      <h1 className="text-2xl font-bold">Cashbook Report - All Accounts</h1>
 
       <Card>
         <CardContent className="pt-6">
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-            {/* Account Select */}
-            <div>
-              <Label>Account</Label>
-              <select
-                className="h-10 border rounded px-2 w-full"
-                value={selectedAccountId}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-              >
-                <option value="">Select Account</option>
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.account_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
             {/* Date Filters */}
             <div>
-              <Label>From</Label>
+              <Label>From Date</Label>
               <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
             </div>
 
             <div>
-              <Label>To</Label>
+              <Label>To Date</Label>
               <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
             </div>
 
@@ -477,7 +447,7 @@ export default function CashbookReport() {
           {/* REPORT TITLE */}
           <div className="text-center my-6 py-3 border-t-2 border-b-2 border-black">
             <h2 className="text-base font-normal">
-              Cashbook Report - {selectedAccount?.account_name} From: {format(new Date(fromDate), "dd-MMM-yyyy")} To: {format(new Date(toDate), "dd-MMM-yyyy")}
+              Cashbook Report - All Accounts From: {format(new Date(fromDate), "dd-MMM-yyyy")} To: {format(new Date(toDate), "dd-MMM-yyyy")}
             </h2>
           </div>
 
@@ -487,6 +457,7 @@ export default function CashbookReport() {
               <tr className="bg-gray-100">
                 <th className="border border-black px-3 py-2 text-center w-16">S.No</th>
                 <th className="border border-black px-3 py-2 text-center w-32">Date</th>
+                <th className="border border-black px-3 py-2 text-center w-40">Account Name</th>
                 <th className="border border-black px-3 py-2 text-center">Detail</th>
                 <th className="border border-black px-3 py-2 text-center w-28">Credit</th>
                 <th className="border border-black px-3 py-2 text-center w-28">Debit</th>
@@ -508,7 +479,7 @@ export default function CashbookReport() {
                       {/* Date Separator Row */}
                       {isDateRow && i > 0 && (
                         <tr className="bg-gray-200">
-                          <td colSpan={6} className="border border-black px-3 py-2 text-center font-bold">
+                          <td colSpan={7} className="border border-black px-3 py-2 text-center font-bold">
                             {format(new Date(r.date), "dd-MM-yyyy")}
                           </td>
                         </tr>
@@ -520,6 +491,7 @@ export default function CashbookReport() {
                         <td className="border border-black px-3 py-2 text-center">
                           {format(new Date(r.date), "dd-MM-yyyy")}
                         </td>
+                        <td className="border border-black px-3 py-2">{r.account_name}</td>
                         <td className="border border-black px-3 py-2">{r.detail}</td>
                         <td className="border border-black px-3 py-2 text-right">
                           {r.credit ? r.credit.toFixed(2) : "0.00"}

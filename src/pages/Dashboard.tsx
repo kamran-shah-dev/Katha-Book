@@ -228,7 +228,7 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        <Link
+        {/* <Link
           to="/reports/credit-debit"
           className="flex items-center gap-3 p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition border border-[#6F4E37]"
         >
@@ -237,7 +237,7 @@ export default function Dashboard() {
             <p className="text-lg font-semibold text-[#3B2F2F]">Credit & Debit</p>
             <p className="text-sm text-gray-500">Complete account movements</p>
           </div>
-        </Link>
+        </Link> */}
 
       </div>
 
