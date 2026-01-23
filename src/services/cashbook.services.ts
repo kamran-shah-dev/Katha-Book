@@ -1,6 +1,5 @@
 import {
   collection,
-  addDoc,
   updateDoc,
   deleteDoc,
   doc,
@@ -14,7 +13,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
-import { updateAccountBalance } from "./accounts.services";
+import { logActivity } from "./activityLog.services";
 
 const cashbookCollection = collection(db, "cashbook_entries");
 
@@ -22,26 +21,22 @@ const cashbookCollection = collection(db, "cashbook_entries");
 // 🔥 REALTIME LISTENER FOR CASHBOOK ENTRIES
 // --------------------------------------------------
 export function listenCashEntries(callback: (data: any[]) => void) {
-  // Order by created_at instead of date for proper sorting
   const q = query(cashbookCollection, orderBy("created_at", "desc"));
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
+  return onSnapshot(q, (snapshot) => {
     const list = snapshot.docs.map((d) => ({
       id: d.id,
       ...d.data(),
     }));
     callback(list);
   });
-
-  return unsubscribe;
 }
 
 // --------------------------------------------------
-// 🔥 CREATE ENTRY (OPTIMIZED WITH BATCH WRITE)
+// 🔥 CREATE ENTRY
 // --------------------------------------------------
 export async function createCashEntry(data: any) {
   try {
-    // Get account current balance
     const accountRef = doc(db, "accounts", data.account_id);
     const accountSnap = await getDoc(accountRef);
 
@@ -50,120 +45,51 @@ export async function createCashEntry(data: any) {
     }
 
     const currentBalance = Number(accountSnap.data().current_balance || 0);
-    
-    // Calculate new balance
-    let newBalance = 0;
-    if (data.type === "CREDIT") {
-      newBalance = currentBalance + Number(data.amount);
-    } else {
-      newBalance = currentBalance - Number(data.amount);
-    }
+    const newBalance =
+      data.type === "CREDIT"
+        ? currentBalance + Number(data.amount)
+        : currentBalance - Number(data.amount);
 
-    // Prepare cashbook entry with entry_by and created_at
-    const cashbookPayload = {
+    const payload = {
       account_id: data.account_id,
       account_name: data.account_name,
       amount: Number(data.amount),
       balance_after: newBalance,
       type: data.type,
-      date: data.date instanceof Timestamp ? data.date : Timestamp.fromDate(new Date(data.date)),
+      date:
+        data.date instanceof Timestamp
+          ? data.date
+          : Timestamp.fromDate(new Date(data.date)),
       payment_details: data.payment_details || "",
       remarks: data.remarks || "",
       invoice_no: data.payment_details || "",
       reference_type: "MANUAL",
       reference_id: "",
-      created_at: data.created_at instanceof Timestamp ? data.created_at : Timestamp.now(),
+      created_at: Timestamp.now(),
       entry_by: data.entry_by || "Unknown",
       search_keywords: generateKeywords(data.account_name),
     };
 
-    // Use batch write for atomic operation
     const batch = writeBatch(db);
-
-    // Add cashbook entry
     const cashbookRef = doc(cashbookCollection);
-    batch.set(cashbookRef, cashbookPayload);
 
-    // Update account balance
-    batch.update(accountRef, {
-      current_balance: newBalance,
-    });
+    batch.set(cashbookRef, payload);
+    batch.update(accountRef, { current_balance: newBalance });
 
-    // Commit batch (faster than sequential operations)
     await batch.commit();
+
+    // 🔥 LOG (non-blocking)
+    logActivity({
+      action: "CREATE",
+      entity: "CASHBOOK",
+      entity_id: cashbookRef.id,
+      description: `Created cashbook entry (${data.type}) for ${data.account_name}`,
+      performed_by: data.entry_by || "System",
+    });
 
     return cashbookRef.id;
   } catch (error) {
     console.error("Error creating cashbook entry:", error);
-    throw error;
-  }
-}
-
-// --------------------------------------------------
-// 🔥 CREATE ENTRY FROM IMPORT/EXPORT
-// --------------------------------------------------
-export async function createCashEntryFromTransaction(
-  accountId: string,
-  accountName: string,
-  amount: number,
-  type: "CREDIT" | "DEBIT",
-  referenceType: "IMPORT" | "EXPORT",
-  referenceId: string,
-  invoiceNo: string,
-  date: Date,
-  entryBy: string = "System"
-) {
-  try {
-    // Get account current balance
-    const accountRef = doc(db, "accounts", accountId);
-    const accountSnap = await getDoc(accountRef);
-
-    if (!accountSnap.exists()) {
-      throw new Error("Account not found");
-    }
-
-    const currentBalance = Number(accountSnap.data().current_balance || 0);
-    
-    // Calculate new balance
-    let newBalance = 0;
-    if (type === "CREDIT") {
-      newBalance = currentBalance + amount;
-    } else {
-      newBalance = currentBalance - amount;
-    }
-
-    const payload = {
-      account_id: accountId,
-      account_name: accountName,
-      amount,
-      balance_after: newBalance,
-      type,
-      date: Timestamp.fromDate(date),
-      payment_details: `${referenceType} ${invoiceNo}`,
-      remarks: `Auto-generated from ${referenceType} entry`,
-      invoice_no: invoiceNo,
-      reference_type: referenceType,
-      reference_id: referenceId,
-      created_at: Timestamp.now(),
-      entry_by: entryBy,
-      search_keywords: generateKeywords(accountName),
-    };
-
-    // Use batch write
-    const batch = writeBatch(db);
-
-    const cashbookRef = doc(cashbookCollection);
-    batch.set(cashbookRef, payload);
-
-    batch.update(accountRef, {
-      current_balance: newBalance,
-    });
-
-    await batch.commit();
-
-    return cashbookRef.id;
-  } catch (error) {
-    console.error("Error creating auto cashbook entry:", error);
     throw error;
   }
 }
@@ -181,23 +107,22 @@ export async function searchCashEntries(keyword: string) {
 
   return new Promise<any[]>((resolve) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const results = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
-      resolve(results);
+      resolve(
+        snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }))
+      );
       unsubscribe();
     });
   });
 }
-
 
 // --------------------------------------------------
 // 🔥 UPDATE ENTRY
 // --------------------------------------------------
 export async function updateCashEntry(id: string, data: any) {
   try {
-    // Get the existing entry
     const entryRef = doc(db, "cashbook_entries", id);
     const entrySnap = await getDoc(entryRef);
 
@@ -213,54 +138,52 @@ export async function updateCashEntry(id: string, data: any) {
       throw new Error("Account not found");
     }
 
-    // Reverse old transaction
     let currentBalance = Number(accountSnap.data().current_balance || 0);
-    
-    if (oldEntry.type === "CREDIT") {
-      currentBalance -= Number(oldEntry.amount);
-    } else {
-      currentBalance += Number(oldEntry.amount);
-    }
 
-    // Apply new transaction
-    if (data.type === "CREDIT") {
-      currentBalance += Number(data.amount);
-    } else {
-      currentBalance -= Number(data.amount);
-    }
+    // reverse old
+    currentBalance +=
+      oldEntry.type === "CREDIT"
+        ? -Number(oldEntry.amount)
+        : Number(oldEntry.amount);
+
+    // apply new
+    currentBalance +=
+      data.type === "CREDIT"
+        ? Number(data.amount)
+        : -Number(data.amount);
 
     const payload = {
       account_id: data.account_id,
       account_name: data.account_name,
       amount: Number(data.amount),
       balance_after: currentBalance,
-      date: data.date instanceof Timestamp ? data.date : Timestamp.fromDate(new Date(data.date)),
-      invoice_no: data.payment_details || "",
+      date:
+        data.date instanceof Timestamp
+          ? data.date
+          : Timestamp.fromDate(new Date(data.date)),
       payment_details: data.payment_details || "",
       remarks: data.remarks || "",
       type: data.type,
-      modified_at: data.modified_at || Timestamp.now(),
+      modified_at: Timestamp.now(),
       modified_by: data.modified_by || data.entry_by || "Unknown",
       search_keywords: generateKeywords(data.account_name),
+      created_at: oldEntry.created_at,
+      entry_by: oldEntry.entry_by,
     };
 
-    // Preserve original created_at and entry_by
-    if (oldEntry.created_at) {
-      payload.created_at = oldEntry.created_at;
-    }
-    if (oldEntry.entry_by) {
-      payload.entry_by = oldEntry.entry_by;
-    }
-
-    // Use batch write
     const batch = writeBatch(db);
-
     batch.update(entryRef, payload);
-    batch.update(accountRef, {
-      current_balance: currentBalance,
-    });
-
+    batch.update(accountRef, { current_balance: currentBalance });
     await batch.commit();
+
+    // 🔥 LOG
+    logActivity({
+      action: "UPDATE",
+      entity: "CASHBOOK",
+      entity_id: id,
+      description: `Updated cashbook entry for ${data.account_name}`,
+      performed_by: data.modified_by || data.entry_by || "System",
+    });
 
     return true;
   } catch (error) {
@@ -270,55 +193,28 @@ export async function updateCashEntry(id: string, data: any) {
 }
 
 // --------------------------------------------------
-// 🔥 DELETE ENTRY
+// 🔥 DELETE ENTRY (FAST)
 // --------------------------------------------------
-export async function deleteCashEntry(id: string) {
-  try {
-    const entryRef = doc(db, "cashbook_entries", id);
-    const entrySnap = await getDoc(entryRef);
+export async function deleteCashEntry(id: string, userName?: string) {
+  await deleteDoc(doc(db, "cashbook_entries", id));
 
-    if (!entrySnap.exists()) {
-      throw new Error("Entry not found");
-    }
-
-    const entry = entrySnap.data();
-    const accountRef = doc(db, "accounts", entry.account_id);
-    const accountSnap = await getDoc(accountRef);
-
-    if (!accountSnap.exists()) {
-      throw new Error("Account not found");
-    }
-
-    // Reverse the transaction
-    let currentBalance = Number(accountSnap.data().current_balance || 0);
-    
-    if (entry.type === "CREDIT") {
-      currentBalance -= Number(entry.amount);
-    } else {
-      currentBalance += Number(entry.amount);
-    }
-
-    // Use batch write
-    const batch = writeBatch(db);
-
-    batch.delete(entryRef);
-    batch.update(accountRef, {
-      current_balance: currentBalance,
-    });
-
-    await batch.commit();
-
-    return true;
-  } catch (error) {
-    console.error("Error deleting cashbook entry:", error);
-    throw error;
-  }
+  // 🔥 LOG
+  logActivity({
+    action: "DELETE",
+    entity: "CASHBOOK",
+    entity_id: id,
+    description: "Deleted cashbook entry",
+    performed_by: userName || "System",
+  });
 }
 
 // --------------------------------------------------
-// 🔥 GENERATE SEARCH KEYWORDS
+// 🔑 SEARCH KEYWORDS
 // --------------------------------------------------
 function generateKeywords(name: string) {
-  const lower = name.toLowerCase();
-  return [lower, ...lower.split(" ")];
+  const lower = name?.toLowerCase().trim();
+  if (!lower) return [];
+
+  const words = lower.split(" ").filter(Boolean);
+  return Array.from(new Set([lower, ...words]));
 }

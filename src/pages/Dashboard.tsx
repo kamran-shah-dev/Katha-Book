@@ -1,3 +1,7 @@
+import { onSnapshot, collection, orderBy, query } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
+import { Clock, Trash2, Edit3, PlusCircle } from "lucide-react";
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -33,10 +37,28 @@ export default function Dashboard() {
     inactiveAccounts: 0,
   });
 
+const [activityLogs, setActivityLogs] = useState<any[]>([]);
 
   useEffect(() => {
     loadTotals();
   }, []);
+
+  useEffect(() => {
+  const q = query(
+    collection(db, "activity_logs"),
+    orderBy("created_at", "desc")
+  );
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const logs = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    setActivityLogs(logs);
+  });
+
+  return () => unsubscribe();
+}, []);
 
   const loadTotals = async () => {
     try {
@@ -46,7 +68,7 @@ export default function Dashboard() {
       console.error("Dashboard load error:", err);
     }
   };
-
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -147,24 +169,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Total Exports (Today) */}
-        {/* <Card className="border-l-4 border-teal-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
-              <FileOutput className="h-4 w-4" />
-              Total Exports (Today)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-bold text-teal-600">
-              {stats.todayExportCount} Entries
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              Rs. {stats.todayExportTotal.toLocaleString()}
-            </p>
-          </CardContent>
-        </Card> */}
-
         {/* Active Accounts (All Time) */}
         <Card className="border-l-4 border-green-600">
           <CardHeader className="pb-2">
@@ -228,18 +232,83 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        {/* <Link
-          to="/reports/credit-debit"
-          className="flex items-center gap-3 p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition border border-[#6F4E37]"
-        >
-          <FolderSearch className="h-8 w-8 text-[#6F4E37]" />
-          <div>
-            <p className="text-lg font-semibold text-[#3B2F2F]">Credit & Debit</p>
-            <p className="text-sm text-gray-500">Complete account movements</p>
-          </div>
-        </Link> */}
+        
 
       </div>
+
+      {/* ACTIVITY LOGS */}
+<Card className="mt-6">
+  <CardHeader className="pb-2">
+    <CardTitle className="flex items-center gap-2 text-lg">
+      <Clock className="h-5 w-5 text-gray-600" />
+      Recent Activity
+    </CardTitle>
+  </CardHeader>
+
+<CardContent className="p-0">
+  {activityLogs.length === 0 ? (
+    <div className="p-6 text-center text-gray-500">
+      No recent activity found.
+    </div>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-100 border-b">
+          <tr>
+            <th className="px-4 py-2 text-left">Date</th>
+            <th className="px-4 py-2 text-left">Time</th>
+            <th className="px-4 py-2 text-left">User</th>
+            <th className="px-4 py-2 text-left">Action</th>
+            <th className="px-4 py-2 text-left">Details</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {activityLogs.slice(0, 20).map((log) => {
+            const dateObj = log.created_at?.toDate();
+            return (
+              <tr key={log.id} className="border-b hover:bg-gray-50">
+                <td className="px-4 py-2">
+                  {dateObj?.toLocaleDateString()}
+                </td>
+
+                <td className="px-4 py-2">
+                  {dateObj?.toLocaleTimeString()}
+                </td>
+
+                <td className="px-4 py-2 font-medium">
+                  {log.performed_by || "System"}
+                </td>
+
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold
+                      ${
+                        log.action === "CREATE"
+                          ? "bg-green-100 text-green-700"
+                          : log.action === "UPDATE"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                  >
+                    {log.action}
+                  </span>
+                </td>
+
+                <td className="px-4 py-2 text-gray-700">
+                  {log.description}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
+</CardContent>
+
+</Card>
+
 
     </div>
   );

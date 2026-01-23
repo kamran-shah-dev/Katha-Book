@@ -12,12 +12,15 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
+import { logActivity } from "./activityLog.services";
 
+// ---------------------------------------
 // COLLECTION REFERENCE
+// ---------------------------------------
 const accountsCollection = collection(db, "accounts");
 
 // ---------------------------------------
-// 🔥 REALTIME LISTENER FOR ACCOUNTS (MAIN FIX)
+// 🔥 REALTIME LISTENER FOR ACCOUNTS
 // ---------------------------------------
 export function listenAccounts(callback: (data: any[]) => void) {
   const q = query(accountsCollection, orderBy("account_name", "asc"));
@@ -52,21 +55,19 @@ export async function createAccount(data: any) {
     search_keywords: generateKeywords(data.account_name),
   };
 
+  // 1️⃣ Create account
   const docRef = await addDoc(accountsCollection, payload);
+
+  // 2️⃣ Log activity (non-blocking)
+  logActivity({
+    action: "CREATE",
+    entity: "ACCOUNT",
+    entity_id: docRef.id,
+    description: `Created account "${data.account_name}"`,
+    performed_by: data.created_by || "System",
+  });
+
   return docRef.id;
-}
-
-// ---------------------------------------
-// 🔥 GENERATE SEARCH KEYWORDS
-// ---------------------------------------
-function generateKeywords(name: string) {
-  const lower = name.toLowerCase().trim();
-
-  if (!lower) return [];
-
-  const words = lower.split(" ").filter(Boolean);
-
-  return Array.from(new Set([lower, ...words]));
 }
 
 // ---------------------------------------
@@ -86,7 +87,6 @@ export async function getAccountById(id: string) {
 
 // ---------------------------------------
 // 🔥 UPDATE ACCOUNT
-// (listener will auto-refresh UI)
 // ---------------------------------------
 export async function updateAccount(id: string, data: any) {
   const ref = doc(db, "accounts", id);
@@ -103,22 +103,44 @@ export async function updateAccount(id: string, data: any) {
     search_keywords: generateKeywords(data.account_name),
   };
 
+  // 1️⃣ Update account
   await updateDoc(ref, payload);
+
+  // 2️⃣ Log activity
+  logActivity({
+    action: "UPDATE",
+    entity: "ACCOUNT",
+    entity_id: id,
+    description: `Updated account "${data.account_name}"`,
+    performed_by: data.modified_by || "System",
+  });
+
   return true;
 }
 
 // ---------------------------------------
 // 🔥 DELETE ACCOUNT
-// (listener auto-updates, no reload needed)
 // ---------------------------------------
-export async function deleteAccount(id: string) {
+export async function deleteAccount(id: string, userName?: string) {
   const ref = doc(db, "accounts", id);
+
+  // 1️⃣ Delete account
   await deleteDoc(ref);
+
+  // 2️⃣ Log activity
+  logActivity({
+    action: "DELETE",
+    entity: "ACCOUNT",
+    entity_id: id,
+    description: `Deleted account`,
+    performed_by: userName || "System",
+  });
+
   return true;
 }
 
 // ---------------------------------------
-// 🔍 SEARCH ACCOUNTS (Firestore query)
+// 🔍 SEARCH ACCOUNTS
 // ---------------------------------------
 export async function searchAccounts(keyword: string) {
   const lower = keyword.toLowerCase().trim();
@@ -128,23 +150,23 @@ export async function searchAccounts(keyword: string) {
     where("search_keywords", "array-contains", lower)
   );
 
-  const snap = await new Promise<any[]>((resolve) => {
+  return new Promise<any[]>((resolve) => {
     const results: any[] = [];
 
-    onSnapshot(q, (snapshot) => {
-      snapshot.forEach((doc) =>
-        results.push({ id: doc.id, ...doc.data() })
-      );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.forEach((doc) => {
+        results.push({ id: doc.id, ...doc.data() });
+      });
+
+      unsubscribe();
       resolve(results);
     });
   });
-
-  return snap;
 }
 
 // ---------------------------------------
 // 🔥 UPDATE ACCOUNT BALANCE
-// (used by transactions)
+// (USED BY CASHBOOK / TRANSACTIONS)
 // ---------------------------------------
 export async function updateAccountBalance(
   accountId: string,
@@ -159,10 +181,26 @@ export async function updateAccountBalance(
   }
 
   const currentBalance = Number(snap.data().current_balance || 0);
-  const newBalance =
-    type === "CREDIT" ? currentBalance + amount : currentBalance - amount;
 
-  await updateDoc(ref, { current_balance: newBalance });
+  const newBalance =
+    type === "CREDIT"
+      ? currentBalance + amount
+      : currentBalance - amount;
+
+  await updateDoc(ref, {
+    current_balance: newBalance,
+  });
 
   return newBalance;
+}
+
+// ---------------------------------------
+// 🔑 SEARCH KEYWORDS HELPER
+// ---------------------------------------
+function generateKeywords(name: string) {
+  const lower = name?.toLowerCase().trim();
+  if (!lower) return [];
+
+  const words = lower.split(" ").filter(Boolean);
+  return Array.from(new Set([lower, ...words]));
 }

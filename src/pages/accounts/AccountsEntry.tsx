@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useAuth } from "@/hooks/useAuth";
 
 import {
   createAccount,
@@ -75,7 +76,7 @@ const subHeadOptions = [
 
 
 export default function AccountsEntry() {
-
+  const {userName} = useAuth();
   const [accounts, setAccounts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -125,9 +126,15 @@ export default function AccountsEntry() {
 
     try {
       if (editingId) {
-        await updateAccountService(editingId, data);
+        await updateAccountService(editingId, {
+          ...data,
+          modified_by: userName,
+        });
       } else {
-        await createAccount(data);
+        await createAccount({
+          ...data,
+          created_by: userName,
+        });
       }
 
       form.reset();
@@ -145,7 +152,7 @@ export default function AccountsEntry() {
   const deleteAccount = async (id: string) => {
     if (!confirm("Delete this account?")) return;
 
-    await deleteAccountService(id);
+    await deleteAccountService(id, userName);
   };
 
 

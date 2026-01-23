@@ -138,7 +138,7 @@ export default function CashbookEntry() {
 
   const deleteEntry = async (id: string) => {
     if (!confirm("Remove this entry?")) return;
-    await deleteCashEntry(id);
+    await deleteCashEntry(id, userName);
   };
 
   const handleEdit = (entry: any) => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
-
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +55,7 @@ export default function InvoiceEntryPage() {
       tol: undefined,
     },
   });
-
+  const { userName } = useAuth();
   const bags = Number(form.watch("bags_qty")) || 0;
   const unit = form.watch("weight_unit") || "kg";
   const weight = Number(form.watch("weight_per_bag")) || 0;
@@ -146,7 +146,11 @@ export default function InvoiceEntryPage() {
       tol: Number(data.tol) || 0,
     };
 
-    await createInvoiceEntry(payload);
+    await createInvoiceEntry({
+      ...payload,
+      created_by: userName,
+    });
+
     generateNextInvoiceNo();
 
     form.reset({
@@ -218,7 +222,10 @@ export default function InvoiceEntryPage() {
       tol: Number(data.tol) || 0,
     };
 
-    await updateInvoiceEntryById(id, payload);
+    await updateInvoiceEntryById(id, {
+      ...payload,
+      modified_by: userName,
+    });
 
     setEditingId(null);
 
@@ -244,7 +251,7 @@ export default function InvoiceEntryPage() {
 
   const deleteEntry = async (id: string) => {
     if (!confirm("Delete this entry?")) return;
-    await deleteInvoiceEntryById(id);
+    await deleteInvoiceEntryById(id, userName);
   };
 
   const filtered = entries.filter(

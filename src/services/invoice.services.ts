@@ -13,93 +13,92 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/firebaseConfig";
-import { createCashEntryFromTransaction } from "./cashbook.services";
+import { createCashEntry } from "./cashbook.services";
+import { logActivity } from "./activityLog.services";
 
 const invoiceCollection = collection(db, "invoice_entries");
 
-// 🔥 REALTIME LISTENER
+/* =========================
+   REALTIME LISTENER
+========================= */
 export function listenInvoiceEntries(callback: (list: any[]) => void) {
   return onSnapshot(
     query(invoiceCollection, orderBy("entry_date", "desc")),
     (snap) => {
-      const formatted = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-        entry_date:
-          d.data().entry_date?.toDate
-            ? d.data().entry_date.toDate()
-            : new Date(d.data().entry_date),
-      }));
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          entry_date:
+            data.entry_date instanceof Timestamp
+              ? data.entry_date.toDate()
+              : new Date(data.entry_date),
+        };
+      });
 
-      callback(formatted);
+      callback(list);
     }
   );
 }
 
-// 🔥 CREATE INVOICE ENTRY + AUTO CASHBOOK
+/* =========================
+   CREATE INVOICE ENTRY
+========================= */
 export async function createInvoiceEntry(data: any) {
-  try {
-    const payload = {
-      account_id: data.account_id || "",
-      account_name: data.account_name || "",
-      supplier: data.supplier || "",
-      bags_qty: Number(data.bags_qty),
-      weight_per_bag: Number(data.weight_per_bag),
-      weight_unit: data.weight_unit || "kg",
-      rate_per_kg: Number(data.rate_per_kg),
-      total_weight: Number(data.total_weight),
-      amount: Number(data.amount),
-      vehicle_numbers: data.vehicle_numbers || "",
-      grn_no: data.grn_no || "",
-      invoice_no: data.invoice_no,
-      entry_date: Timestamp.fromDate(new Date(data.entry_date)),
-      created_at: Timestamp.now(),
-      // Additional adjustment fields
-      bardana: Number(data.bardana || 0),
-      mazdoori: Number(data.mazdoori || 0),
-      munshiana: Number(data.munshiana || 0),
-      charsadna: Number(data.charsadna || 0),
-      walai: Number(data.walai || 0),
-      tol: Number(data.tol || 0),
-      search_keywords: generateKeywords(data.account_name),
-    };
+  const entryDate = new Date(data.entry_date);
 
-    const docRef = await addDoc(invoiceCollection, payload);
-    const invoiceId = docRef.id;
+  const payload = {
+    account_id: data.account_id ?? "",
+    account_name: data.account_name ?? "",
+    supplier: data.supplier ?? "",
 
-    // Auto cashbook entry (DEBIT) - uses final amount with adjustments
-    await createCashEntryFromTransaction(
-      data.account_id,
-      data.account_name,
-      Number(data.amount),
-      "DEBIT",
-      "IMPORT",
-      invoiceId,
-      data.invoice_no,
-      new Date(data.entry_date)
-    );
+    bags_qty: Number(data.bags_qty || 0),
+    weight_per_bag: Number(data.weight_per_bag || 0),
+    weight_unit: data.weight_unit || "kg",
+    rate_per_kg: Number(data.rate_per_kg || 0),
+    total_weight: Number(data.total_weight || 0),
+    amount: Number(data.amount || 0),
 
-    return invoiceId;
-  } catch (error) {
-    console.error("Error creating invoice entry:", error);
-    throw error;
-  }
+    vehicle_numbers: data.vehicle_numbers ?? "",
+    grn_no: data.grn_no ?? "",
+    invoice_no: data.invoice_no,
+
+    entry_date: Timestamp.fromDate(entryDate),
+    created_at: Timestamp.now(),
+
+    // Adjustments
+    bardana: Number(data.bardana || 0),
+    mazdoori: Number(data.mazdoori || 0),
+    munshiana: Number(data.munshiana || 0),
+    charsadna: Number(data.charsadna || 0),
+    walai: Number(data.walai || 0),
+    tol: Number(data.tol || 0),
+
+    search_keywords: generateKeywords(data.account_name),
+  };
+
+  const docRef = await addDoc(invoiceCollection, payload);
+
+  // 🔥 LOG (non-blocking)
+  logActivity({
+    action: "CREATE",
+    entity: "INVOICE",
+    entity_id: docRef.id,
+    description: `Created invoice #${payload.invoice_no}`,
+    performed_by: data.created_by || "System",
+    metadata: {
+      amount: payload.amount,
+      account: payload.account_name,
+    },
+  });
+
+  return docRef.id;
 }
 
-// 🔥 GENERATE SEARCH KEYWORDS
-function generateKeywords(name: string) {
-  const lower = name.toLowerCase();
-  return [lower, ...lower.split(" ")];
-}
-
-// 🔥 GET LAST INVOICE NUMBER
-export async function getLastInvoiceNo() {
-  const q = query(invoiceCollection, orderBy("invoice_no", "desc"), limit(1));
-  const snap = await getDocs(q);
-  return snap.empty ? "IMP000" : snap.docs[0].data().invoice_no;
-}
-
-// 🔥 UPDATE INVOICE ENTRY
+/* =========================
+   UPDATE INVOICE
+========================= */
 export async function updateInvoiceEntryById(id: string, data: any) {
   const ref = doc(db, "invoice_entries", id);
 
@@ -107,32 +106,86 @@ export async function updateInvoiceEntryById(id: string, data: any) {
     account_id: data.account_id,
     account_name: data.account_name,
     supplier: data.supplier,
-    bags_qty: Number(data.bags_qty),
-    weight_per_bag: Number(data.weight_per_bag),
+
+    bags_qty: Number(data.bags_qty || 0),
+    weight_per_bag: Number(data.weight_per_bag || 0),
     weight_unit: data.weight_unit || "kg",
-    rate_per_kg: Number(data.rate_per_kg),
-    total_weight: Number(data.total_weight),
-    amount: Number(data.amount),
+    rate_per_kg: Number(data.rate_per_kg || 0),
+    total_weight: Number(data.total_weight || 0),
+    amount: Number(data.amount || 0),
+
     vehicle_numbers: data.vehicle_numbers,
     grn_no: data.grn_no,
+
     entry_date: Timestamp.fromDate(new Date(data.entry_date)),
-    // Additional adjustment fields
+
+    // Adjustments
     bardana: Number(data.bardana || 0),
     mazdoori: Number(data.mazdoori || 0),
     munshiana: Number(data.munshiana || 0),
     charsadna: Number(data.charsadna || 0),
     walai: Number(data.walai || 0),
     tol: Number(data.tol || 0),
+
     search_keywords: generateKeywords(data.account_name),
   };
 
   await updateDoc(ref, payload);
+
+  // 🔥 LOG
+  logActivity({
+    action: "UPDATE",
+    entity: "INVOICE",
+    entity_id: id,
+    description: `Updated invoice #${data.invoice_no}`,
+    performed_by: data.modified_by || "System",
+  });
+
   return true;
 }
 
-// 🔥 DELETE ENTRY
-export async function deleteInvoiceEntryById(id: string) {
-  const ref = doc(db, "invoice_entries", id);
-  await deleteDoc(ref);
+/* =========================
+   DELETE INVOICE
+========================= */
+export async function deleteInvoiceEntryById(
+  id: string,
+  userName?: string
+) {
+  await deleteDoc(doc(db, "invoice_entries", id));
+
+  // 🔥 LOG
+  logActivity({
+    action: "DELETE",
+    entity: "INVOICE",
+    entity_id: id,
+    description: "Deleted invoice",
+    performed_by: userName || "System",
+  });
+
   return true;
+}
+
+/* =========================
+   GET LAST INVOICE NUMBER
+========================= */
+export async function getLastInvoiceNo() {
+  const q = query(
+    invoiceCollection,
+    orderBy("invoice_no", "desc"),
+    limit(1)
+  );
+
+  const snap = await getDocs(q);
+  return snap.empty ? "IMP000" : snap.docs[0].data().invoice_no;
+}
+
+/* =========================
+   SEARCH KEYWORDS
+========================= */
+function generateKeywords(name = "") {
+  const lower = name.toLowerCase().trim();
+  if (!lower) return [];
+
+  const words = lower.split(/\s+/);
+  return Array.from(new Set([lower, ...words]));
 }
