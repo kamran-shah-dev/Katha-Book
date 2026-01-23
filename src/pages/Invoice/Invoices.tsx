@@ -471,7 +471,7 @@ export default function InvoiceEntryPage() {
           <div className="p-3 bg-white rounded border border-gray-500 space-y-1">
             <div className="flex justify-between font-semibold">
               <span>Total Weight:</span>
-              <span>{totalWeight.toFixed(2)} {unit === "bags" ? "KG" : unitLabelMap[unit]}</span>
+              <span>{totalWeight.toFixed(0)} {unit === "bags" ? "KG" : unitLabelMap[unit]}</span>
             </div>
 
             <div className="flex justify-between text-sm text-gray-600">

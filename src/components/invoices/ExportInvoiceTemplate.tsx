@@ -183,7 +183,7 @@ export default function ExportInvoiceTemplate({ entry }) {
               }}>
                 <th style={{ border: '1px solid #000', padding: '10px', fontWeight: 'bold' }}>S.No</th>
                 <th style={{ border: '1px solid #000', padding: '10px', fontWeight: 'bold' }}>
-                  {entry.type === "import" ? "Supplier" : "Products"}
+                  {entry.type === "import" ? "Products" : "Products"}
                 </th>
                 <th style={{ border: '1px solid #000', padding: '10px', fontWeight: 'bold' }}>Bags Qty</th>
                 <th style={{ border: '1px solid #000', padding: '10px', fontWeight: 'bold' }}>Weight<br/>Per Bag</th>
@@ -205,6 +205,21 @@ export default function ExportInvoiceTemplate({ entry }) {
                 <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'center', verticalAlign: 'top', height: '150px' }}>{entry.amount}</td>
               </tr>
               
+              {/* Adjustments Row - NEW */}
+              <tr style={{ background: '#f5f5f5' }}>
+                <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'center' }}><strong>Bardana:</strong> {entry.bardana || 0}</td>
+                <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'center' }}><strong>Mazdoori:</strong> {entry.mazdoori || 0}</td>
+                <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'center' }}><strong>Munshiana:</strong> {entry.munshiana || 0}</td>
+                <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'center' }}><strong>Charsadna:</strong> {entry.charsadna || 0}</td>  
+                <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'center' }}><strong>Walai:</strong> {entry.walai || 0}</td>
+                <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'center' }}><strong>Tol:</strong> {entry.tol || 0}</td>
+                
+                <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'center', fontWeight: 'bold' }}>
+                  {(Number(entry.bardana || 0) + Number(entry.mazdoori || 0) + Number(entry.munshiana || 0) + 
+                    Number(entry.charsadna || 0) + Number(entry.walai || 0) + Number(entry.tol || 0)).toFixed(2)}
+                </td>
+              </tr>
+
               {/* Vehicle Numbers Row */}
               <tr>
                 <td style={{ border: '1px solid #000', padding: '10px' }}></td>
