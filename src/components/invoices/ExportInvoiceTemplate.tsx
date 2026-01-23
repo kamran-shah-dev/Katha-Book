@@ -309,7 +309,29 @@ export default function ExportInvoiceTemplate({ entry }) {
         }}>
           Total Page No.: 1
         </div>
+        <div
+          dir="rtl"
+          style={{
+            padding: "8px 20px",
+            fontSize: "12px",
+            lineHeight: "1.7",
+            textAlign: "right",
+            borderTop: "1px solid #000",
+            marginTop: "10px",
+            fontFamily: "Arial, sans-serif",
+            color: "#000",
+          }}
+        >
+          <strong>نوٹ:</strong><br /> خریدا ہوا مال جو کہ دلال کے پاس شدہ ہو، ہرگز واپس نہ ہوگا۔ رقم پندرہ دن کے اندر اندر فرم کو براہِ راست ارسال کریں۔
+         <br /> دلال کو ہرگز رقم نہ بھیجیں۔    
+          مال کمپنی سے تول کر وصول کریں۔
+          ہم کسی کمی بیشی کے ذمہ دار نہ ہوں گے۔ 
+          شکریہ
+        </div>
+
+
       </div>
+      
 
       <style>{`
         @media print {
