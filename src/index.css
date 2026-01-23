@@ -6,6 +6,13 @@
 All colors MUST be HSL.
 */
 
+@font-face {
+  font-family: "JameelNoori";
+  src: url("/public/fonts/JameelNooriNastaleeq.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
