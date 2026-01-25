@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainLayout from "@/components/layout/MainLayout";
 import InvoicePreview from "@/pages/Invoice/invoice-preview";
+import PurchasePreview from "./pages/purchase/purchase-preview";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AccountsEntry from "./pages/accounts/AccountsEntry";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/purchase" element={<ProtectedPage><PurchaseEntryPage /></ProtectedPage>} />
             <Route path="/reports/cashbook" element={<ProtectedPage><CashbookReport /></ProtectedPage>} />
             <Route path="/invoice-preview" element={<InvoicePreview />} />
+            <Route path="/purchase-preview" element={<PurchasePreview />} />
             {/* <Route path="/utility/import" element={<ProtectedPage><DataImport /></ProtectedPage>} /> */}
             <Route path="/reports/ledger" element={<ProtectedPage><LedgerReport /></ProtectedPage>} />
             <Route path="/reports/credit-debit" element={<ProtectedPage><CreditDebitReport /></ProtectedPage>} />
