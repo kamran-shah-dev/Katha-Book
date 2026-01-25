@@ -1,159 +1,191 @@
-// import {
-//   collection,
-//   addDoc,
-//   updateDoc,
-//   deleteDoc,
-//   doc,
-//   onSnapshot,
-//   query,
-//   orderBy,
-//   limit,
-//   where,
-// } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  onSnapshot,
+  Timestamp,
+} from "firebase/firestore";
 
-// import { db } from "@/firebaseConfig";
-// import { createCashEntryFromTransaction } from "./cashbook.services";
+import { db } from "@/firebaseConfig";
+import { createCashEntry } from "./cashbook.services";
+import { logActivity } from "./activityLog.services";
 
-// const exportCollection = collection(db, "export_entries");
+const invoiceCollection = collection(db, "invoice_entries");
 
-// // --------------------------------------------------
-// // 🔥 REALTIME LISTENER FOR EXPORT ENTRIES
-// // --------------------------------------------------
-// export function listenExportEntries(callback: (entries: any[]) => void) {
-//   const q = query(exportCollection, orderBy("entry_date", "desc"));
+/* =========================
+   REALTIME LISTENER
+========================= */
+export function listenInvoiceEntries(callback: (list: any[]) => void) {
+  return onSnapshot(
+    query(invoiceCollection, orderBy("entry_date", "desc")),
+    (snap) => {
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          entry_date:
+            data.entry_date instanceof Timestamp
+              ? data.entry_date.toDate()
+              : new Date(data.entry_date),
+        };
+      });
 
-//   const unsubscribe = onSnapshot(q, (snapshot) => {
-//     const list = snapshot.docs.map((d) => ({
-//       id: d.id,
-//       ...d.data(),
-//     }));
-//     callback(list);
-//   });
+      callback(list);
+    }
+  );
+}
 
-//   return unsubscribe;
-// }
+/* =========================
+   CREATE INVOICE ENTRY
+========================= */
+export async function createInvoiceEntry(data: any) {
+  const entryDate = new Date(data.entry_date);
 
-// // --------------------------------------------------
-// // 🔥 CREATE EXPORT ENTRY (WITH AUTO CASHBOOK ENTRY)
-// // --------------------------------------------------
-// export async function createExportEntry(data: any) {
-//   try {
-//     const payload = {
-//       account_id: data.account_id || "",
-//       account_name: data.account_name || "",
-//       product: data.product || "",
-//       bags_qty: Number(data.bags_qty),
-//       weight_per_bag: Number(data.weight_per_bag),
-//       rate_per_kg: Number(data.rate_per_kg),
-//       total_weight: Number(data.total_weight),
-//       amount: Number(data.amount),
-//       vehicle_numbers: data.vehicle_numbers || "",
-//       gd_no: data.gd_no || "",
-//       invoice_no: data.invoice_no,
-//       entry_date: new Date(data.entry_date),
-//       created_at: new Date(),
-//       search_keywords: generateKeywords(data.account_name),
-//     };
+  const payload = {
+    account_id: data.account_id ?? "",
+    account_name: data.account_name ?? "",
+    supplier: data.supplier ?? "",
 
-//     // 1) Add Export entry
-//     const ref = await addDoc(exportCollection, payload);
-//     const exportId = ref.id;
+    bags_qty: Number(data.bags_qty || 0),
+    weight_per_bag: Number(data.weight_per_bag || 0),
+    weight_unit: data.weight_unit || "kg",
+    rate_per_kg: Number(data.rate_per_kg || 0),
+    total_weight: Number(data.total_weight || 0),
+    amount: Number(data.amount || 0),
 
-//     // 2) Auto-cashbook transaction (CREDIT)
-//     await createCashEntryFromTransaction(
-//       data.account_id,
-//       data.account_name,
-//       Number(data.amount),
-//       "CREDIT",
-//       "EXPORT",
-//       exportId,
-//       data.invoice_no,
-//       new Date(data.entry_date)
-//     );
+    vehicle_numbers: data.vehicle_numbers ?? "",
+    grn_no: data.grn_no ?? "",
+    invoice_no: data.invoice_no,
 
-//     return exportId;
-//   } catch (error) {
-//     console.error("Error creating export entry:", error);
-//     throw error;
-//   }
-// }
+    entry_date: Timestamp.fromDate(entryDate),
+    created_at: Timestamp.now(),
 
-// // --------------------------------------------------
-// // 🔥 SEARCH EXPORT ENTRIES
-// // --------------------------------------------------
-// export async function searchExportEntries(keyword: string) {
-//   const lower = keyword.toLowerCase();
+    // Adjustments
+    bardana: Number(data.bardana || 0),
+    mazdoori: Number(data.mazdoori || 0),
+    munshiana: Number(data.munshiana || 0),
+    charsadna: Number(data.charsadna || 0),
+    walai: Number(data.walai || 0),
+    tol: Number(data.tol || 0),
 
-//   const q = query(
-//     exportCollection,
-//     where("search_keywords", "array-contains", lower)
-//   );
+    search_keywords: generateKeywords(data.account_name),
+  };
 
-//   return new Promise<any[]>((resolve) => {
-//     const unsub = onSnapshot(q, (snapshot) => {
-//       const results = snapshot.docs.map((d) => ({
-//         id: d.id,
-//         ...d.data(),
-//       }));
-//       resolve(results);
-//       unsub();
-//     });
-//   });
-// }
+  const docRef = await addDoc(invoiceCollection, payload);
 
-// // --------------------------------------------------
-// // 🔥 GET LAST INVOICE NUMBER
-// // --------------------------------------------------
-// export async function getLastExportInvoiceNo() {
-//   const q = query(exportCollection, orderBy("invoice_no", "desc"), limit(1));
+  // 🔥 LOG (non-blocking)
+  logActivity({
+    action: "CREATE",
+    entity: "INVOICE",
+    entity_id: docRef.id,
+    description: `Created invoice #${payload.invoice_no}`,
+    performed_by: data.created_by || "System",
+    metadata: {
+      amount: payload.amount,
+      account: payload.account_name,
+    },
+  });
 
-//   return new Promise<string>((resolve) => {
-//     const unsub = onSnapshot(q, (snapshot) => {
-//       if (snapshot.empty) resolve("HAH000");
-//       else resolve(snapshot.docs[0].data().invoice_no);
-//       unsub();
-//     });
-//   });
-// }
+  return docRef.id;
+}
 
-// // --------------------------------------------------
-// // 🔥 UPDATE EXPORT ENTRY
-// // --------------------------------------------------
-// export async function updateExportEntry(id: string, data: any) {
-//   const ref = doc(db, "export_entries", id);
+/* =========================
+   UPDATE INVOICE
+========================= */
+export async function updateInvoiceEntryById(id: string, data: any) {
+  const ref = doc(db, "invoice_entries", id);
 
-//   const payload = {
-//     account_id: data.account_id,
-//     account_name: data.account_name,
-//     product: data.product,
-//     bags_qty: Number(data.bags_qty),
-//     weight_per_bag: Number(data.weight_per_bag),
-//     rate_per_kg: Number(data.rate_per_kg),
-//     total_weight: Number(data.total_weight),
-//     amount: Number(data.amount),
-//     vehicle_numbers: data.vehicle_numbers,
-//     gd_no: data.gd_no,
-//     entry_date: new Date(data.entry_date),
-//     search_keywords: generateKeywords(data.account_name),
-//   };
+  const payload = {
+    account_id: data.account_id,
+    account_name: data.account_name,
+    supplier: data.supplier,
 
-//   await updateDoc(ref, payload);
-//   return true;
-// }
+    bags_qty: Number(data.bags_qty || 0),
+    weight_per_bag: Number(data.weight_per_bag || 0),
+    weight_unit: data.weight_unit || "kg",
+    rate_per_kg: Number(data.rate_per_kg || 0),
+    total_weight: Number(data.total_weight || 0),
+    amount: Number(data.amount || 0),
 
-// // --------------------------------------------------
-// // 🔥 DELETE EXPORT ENTRY
-// // --------------------------------------------------
-// export async function deleteExportEntry(id: string) {
-//   const ref = doc(db, "export_entries", id);
-//   await deleteDoc(ref);
-//   return true;
-// }
+    vehicle_numbers: data.vehicle_numbers,
+    grn_no: data.grn_no,
 
-// // --------------------------------------------------
-// // 🔥 GENERATE SEARCH KEYWORDS
-// // --------------------------------------------------
-// function generateKeywords(name: string) {
-//   const lower = name.toLowerCase();
-//   return [lower, ...lower.split(" ")];
-// }
+    entry_date: Timestamp.fromDate(new Date(data.entry_date)),
+
+    // Adjustments
+    bardana: Number(data.bardana || 0),
+    mazdoori: Number(data.mazdoori || 0),
+    munshiana: Number(data.munshiana || 0),
+    charsadna: Number(data.charsadna || 0),
+    walai: Number(data.walai || 0),
+    tol: Number(data.tol || 0),
+
+    search_keywords: generateKeywords(data.account_name),
+  };
+
+  await updateDoc(ref, payload);
+
+  // 🔥 LOG
+  logActivity({
+    action: "UPDATE",
+    entity: "INVOICE",
+    entity_id: id,
+    description: `Updated invoice #${data.invoice_no}`,
+    performed_by: data.modified_by || "System",
+  });
+
+  return true;
+}
+
+/* =========================
+   DELETE INVOICE
+========================= */
+export async function deleteInvoiceEntryById(
+  id: string,
+  userName?: string
+) {
+  await deleteDoc(doc(db, "invoice_entries", id));
+
+  // 🔥 LOG
+  logActivity({
+    action: "DELETE",
+    entity: "INVOICE",
+    entity_id: id,
+    description: "Deleted invoice",
+    performed_by: userName || "System",
+  });
+
+  return true;
+}
+
+/* =========================
+   GET LAST INVOICE NUMBER
+========================= */
+export async function getLastInvoiceNo() {
+  const q = query(
+    invoiceCollection,
+    orderBy("invoice_no", "desc"),
+    limit(1)
+  );
+
+  const snap = await getDocs(q);
+  return snap.empty ? "IMP000" : snap.docs[0].data().invoice_no;
+}
+
+/* =========================
+   SEARCH KEYWORDS
+========================= */
+function generateKeywords(name = "") {
+  const lower = name.toLowerCase().trim();
+  if (!lower) return [];
+
+  const words = lower.split(/\s+/);
+  return Array.from(new Set([lower, ...words]));
+}

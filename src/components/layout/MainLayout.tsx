@@ -32,7 +32,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Accounts", icon: Users, path: "/accounts" },
     { name: "Cashbook", icon: BookOpen, path: "/cashbook" },
     { name: "Invoices", icon: Truck, path: "/goods-received" },
-    // { name: "Export", icon: FolderSearch, path: "/export" },
+    { name: "Export", icon: FolderSearch, path: "/export" },
 
     {
       name: "Reports",
