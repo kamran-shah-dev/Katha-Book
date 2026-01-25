@@ -12,7 +12,7 @@ export async function logActivity({
   metadata = {},
 }: {
   action: "CREATE" | "UPDATE" | "DELETE";
-  entity: "CASHBOOK" | "ACCOUNT" | "INVOICE";
+  entity: "CASHBOOK" | "ACCOUNT" | "INVOICE" | "PURCHASE";
   entity_id: string;
   description: string;
   performed_by: string;

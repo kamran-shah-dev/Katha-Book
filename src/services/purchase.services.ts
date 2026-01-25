@@ -16,14 +16,14 @@ import { db } from "@/firebaseConfig";
 import { createCashEntry } from "./cashbook.services";
 import { logActivity } from "./activityLog.services";
 
-const invoiceCollection = collection(db, "invoice_entries");
+const purchaseCollection = collection(db, "purchase_entries");
 
 /* =========================
    REALTIME LISTENER
 ========================= */
-export function listenInvoiceEntries(callback: (list: any[]) => void) {
+export function listenPurchaseEntries(callback: (list: any[]) => void) {
   return onSnapshot(
-    query(invoiceCollection, orderBy("entry_date", "desc")),
+    query(purchaseCollection, orderBy("entry_date", "desc")),
     (snap) => {
       const list = snap.docs.map((d) => {
         const data = d.data();
@@ -43,9 +43,9 @@ export function listenInvoiceEntries(callback: (list: any[]) => void) {
 }
 
 /* =========================
-   CREATE INVOICE ENTRY
+   CREATE PURCHASE ENTRY
 ========================= */
-export async function createInvoiceEntry(data: any) {
+export async function createPurchaseEntry(data: any) {
   const entryDate = new Date(data.entry_date);
 
   const payload = {
@@ -62,30 +62,22 @@ export async function createInvoiceEntry(data: any) {
 
     vehicle_numbers: data.vehicle_numbers ?? "",
     grn_no: data.grn_no ?? "",
-    invoice_no: data.invoice_no,
+    purchase_no: data.purchase_no,
 
     entry_date: Timestamp.fromDate(entryDate),
     created_at: Timestamp.now(),
 
-    // Adjustments
-    bardana: Number(data.bardana || 0),
-    mazdoori: Number(data.mazdoori || 0),
-    munshiana: Number(data.munshiana || 0),
-    charsadna: Number(data.charsadna || 0),
-    walai: Number(data.walai || 0),
-    tol: Number(data.tol || 0),
-
     search_keywords: generateKeywords(data.account_name),
   };
 
-  const docRef = await addDoc(invoiceCollection, payload);
+  const docRef = await addDoc(purchaseCollection, payload);
 
   // 🔥 LOG (non-blocking)
   logActivity({
     action: "CREATE",
-    entity: "INVOICE",
+    entity: "PURCHASE",
     entity_id: docRef.id,
-    description: `Created invoice #${payload.invoice_no}`,
+    description: `Created purchase entry #${payload.purchase_no}`,
     performed_by: data.created_by || "System",
     metadata: {
       amount: payload.amount,
@@ -97,10 +89,10 @@ export async function createInvoiceEntry(data: any) {
 }
 
 /* =========================
-   UPDATE INVOICE
+   UPDATE PURCHASE ENTRY
 ========================= */
-export async function updateInvoiceEntryById(id: string, data: any) {
-  const ref = doc(db, "invoice_entries", id);
+export async function updatePurchaseEntryById(id: string, data: any) {
+  const ref = doc(db, "purchase_entries", id);
 
   const payload = {
     account_id: data.account_id,
@@ -119,14 +111,6 @@ export async function updateInvoiceEntryById(id: string, data: any) {
 
     entry_date: Timestamp.fromDate(new Date(data.entry_date)),
 
-    // Adjustments
-    bardana: Number(data.bardana || 0),
-    mazdoori: Number(data.mazdoori || 0),
-    munshiana: Number(data.munshiana || 0),
-    charsadna: Number(data.charsadna || 0),
-    walai: Number(data.walai || 0),
-    tol: Number(data.tol || 0),
-
     search_keywords: generateKeywords(data.account_name),
   };
 
@@ -135,9 +119,9 @@ export async function updateInvoiceEntryById(id: string, data: any) {
   // 🔥 LOG
   logActivity({
     action: "UPDATE",
-    entity: "INVOICE",
+    entity: "PURCHASE",
     entity_id: id,
-    description: `Updated invoice #${data.invoice_no}`,
+    description: `Updated purchase entry #${data.purchase_no}`,
     performed_by: data.modified_by || "System",
   });
 
@@ -145,20 +129,19 @@ export async function updateInvoiceEntryById(id: string, data: any) {
 }
 
 /* =========================
-   DELETE INVOICE
+   DELETE PURCHASE ENTRY
 ========================= */
-export async function deleteInvoiceEntryById(
+export async function deletePurchaseEntryById(
   id: string,
   userName?: string
 ) {
-  await deleteDoc(doc(db, "invoice_entries", id));
-
+  await deleteDoc(doc(db, "purchase_entries", id));
   // 🔥 LOG
   logActivity({
     action: "DELETE",
-    entity: "INVOICE",
+    entity: "PURCHASE",
     entity_id: id,
-    description: "Deleted invoice",
+    description: "Deleted purchase entry",
     performed_by: userName || "System",
   });
 
@@ -166,17 +149,17 @@ export async function deleteInvoiceEntryById(
 }
 
 /* =========================
-   GET LAST INVOICE NUMBER
+   GET LAST PURCHASE NUMBER
 ========================= */
-export async function getLastInvoiceNo() {
+export async function getLastPurchaseNo() {
   const q = query(
-    invoiceCollection,
-    orderBy("invoice_no", "desc"),
+    purchaseCollection,
+    orderBy("purchase_no", "desc"),
     limit(1)
   );
 
   const snap = await getDocs(q);
-  return snap.empty ? "IMP000" : snap.docs[0].data().invoice_no;
+  return snap.empty ? "PUR000" : snap.docs[0].data().purchase_no;
 }
 
 /* =========================

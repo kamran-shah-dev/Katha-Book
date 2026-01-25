@@ -10,12 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RefreshCw, Trash2, Pencil, Printer } from "lucide-react";
 
 import {
-  listenInvoiceEntries,
-  createInvoiceEntry,
-  updateInvoiceEntryById,
-  deleteInvoiceEntryById,
-  getLastInvoiceNo
-} from "@/services/invoice.services";
+  listenPurchaseEntries,
+  createPurchaseEntry,
+  updatePurchaseEntryById,
+  deletePurchaseEntryById,
+  getLastPurchaseNo
+} from "@/services/purchase.services";
 
 import { listenAccounts } from "@/services/accounts.services";
 
@@ -27,11 +27,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function InvoiceEntryPage() {
+export default function PurchaseEntryPage() {
   const [entries, setEntries] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-  const [invoiceNo, setInvoiceNo] = useState("IMP001");
+  const [purchaseNo, setPurchaseNo] = useState("PUR001");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
 
@@ -40,40 +40,25 @@ export default function InvoiceEntryPage() {
       account_id: "",
       account_name: "",
       supplier: "",
-      bags_qty: undefined,
-      weight_per_bag: undefined,
-      rate_per_kg: undefined,
+      bags_qty: 0,
+      weight_per_bag: 0,
+      rate_per_kg: 0,
       vehicle_numbers: "",
       weight_unit: "kg",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
-      bardana: undefined,
-      mazdoori: undefined,
-      munshiana: undefined,
-      charsadna: undefined,
-      walai: undefined,
-      tol: undefined,
     },
   });
+  
   const { userName } = useAuth();
   const bags = Number(form.watch("bags_qty")) || 0;
   const unit = form.watch("weight_unit") || "kg";
   const weight = Number(form.watch("weight_per_bag")) || 0;
   const rate = Number(form.watch("rate_per_kg")) || 0;
-  const bardana = Number(form.watch("bardana")) || 0;
-  const mazdoori = Number(form.watch("mazdoori")) || 0;
-  const munshiana = Number(form.watch("munshiana")) || 0;
-  const charsadna = Number(form.watch("charsadna")) || 0;
-  const walai = Number(form.watch("walai")) || 0;
-  const tol = Number(form.watch("tol")) || 0;
 
   // Calculate total weight based on unit type
   const totalWeight = unit === "bags" ? bags * weight : bags;
-  const baseAmount = totalWeight * rate;
-  
-  // Calculate final amount with adjustments
-  const totalAdjustments = bardana + mazdoori + munshiana + charsadna + walai + tol;
-  const finalAmount = baseAmount + totalAdjustments;
+  const finalAmount = totalWeight * rate;
 
   const unitLabelMap: Record<string, string> = {
     kg: "KG",
@@ -87,9 +72,9 @@ export default function InvoiceEntryPage() {
           setLoadingAccounts(false);
       });
 
-      const unsubEntries = listenInvoiceEntries((list) => setEntries(list));
+      const unsubEntries = listenPurchaseEntries((list) => setEntries(list));
 
-      loadInvoiceNo();
+      loadPurchaseNo();
 
       return () => {
         unsubAcc();
@@ -97,27 +82,27 @@ export default function InvoiceEntryPage() {
       };
   }, []);
 
-  const openInvoice = (entry: any, type: "import" | "export") => {
+  const openPurchase = (entry: any, type: "purchase") => {
     const payload = {
       ...entry,
       type,
     };
 
-    localStorage.setItem("invoiceData", JSON.stringify(payload));
-    window.open("/invoice-preview", "_blank");
+    localStorage.setItem("purchaseData", JSON.stringify(payload));
+    window.open("/purchase-preview", "_blank");
   };
 
-  const loadInvoiceNo = async () => {
-    const last = await getLastInvoiceNo();
-    const prefix = "IMP";
+  const loadPurchaseNo = async () => {
+    const last = await getLastPurchaseNo();
+    const prefix = "PUR";
     const num = parseInt(last.replace(prefix, ""), 10) + 1;
     const next = prefix + String(num).padStart(3, "0");
-    setInvoiceNo(next);
+    setPurchaseNo(next);
   };
 
-  const generateNextInvoiceNo = () => {
-    setInvoiceNo((prev) => {
-      const prefix = "IMP";
+  const generateNextPurchaseNo = () => {
+    setPurchaseNo((prev) => {
+      const prefix = "PUR";
       const number = parseInt(prev.replace(prefix, ""), 10) + 1;
       return `${prefix}${String(number).padStart(3, "0")}`;
     });
@@ -137,21 +122,15 @@ export default function InvoiceEntryPage() {
       vehicle_numbers: data.vehicle_numbers,
       grn_no: data.grn_no,
       entry_date: data.entry_date,
-      invoice_no: invoiceNo,
-      bardana: Number(data.bardana) || 0,
-      mazdoori: Number(data.mazdoori) || 0,
-      munshiana: Number(data.munshiana) || 0,
-      charsadna: Number(data.charsadna) || 0,
-      walai: Number(data.walai) || 0,
-      tol: Number(data.tol) || 0,
+      purchase_no: purchaseNo,
     };
 
-    await createInvoiceEntry({
+    await createPurchaseEntry({
       ...payload,
       created_by: userName,
     });
 
-    generateNextInvoiceNo();
+    generateNextPurchaseNo();
 
     form.reset({
       account_id: "",
@@ -164,12 +143,6 @@ export default function InvoiceEntryPage() {
       weight_unit: "kg",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
-      bardana: 0,
-      mazdoori: 0,
-      munshiana: 0,
-      charsadna: 0,
-      walai: 0,
-      tol: 0,
     });
   };
 
@@ -186,18 +159,10 @@ export default function InvoiceEntryPage() {
     form.setValue("vehicle_numbers", entry.vehicle_numbers);
     form.setValue("grn_no", entry.grn_no);
     
-    // Convert entry_date to yyyy-MM-dd format
     const dateValue = entry.entry_date?.toDate 
       ? format(entry.entry_date.toDate(), "yyyy-MM-dd")
       : format(new Date(entry.entry_date), "yyyy-MM-dd");
     form.setValue("entry_date", dateValue);
-    
-    form.setValue("bardana", entry.bardana || 0);
-    form.setValue("mazdoori", entry.mazdoori || 0);
-    form.setValue("munshiana", entry.munshiana || 0);
-    form.setValue("charsadna", entry.charsadna || 0);
-    form.setValue("walai", entry.walai || 0);
-    form.setValue("tol", entry.tol || 0);
   };
 
   const updateEntry = async (id: string, data: any) => {
@@ -214,15 +179,9 @@ export default function InvoiceEntryPage() {
       vehicle_numbers: data.vehicle_numbers,
       grn_no: data.grn_no,
       entry_date: data.entry_date,
-      bardana: Number(data.bardana) || 0,
-      mazdoori: Number(data.mazdoori) || 0,
-      munshiana: Number(data.munshiana) || 0,
-      charsadna: Number(data.charsadna) || 0,
-      walai: Number(data.walai) || 0,
-      tol: Number(data.tol) || 0,
     };
 
-    await updateInvoiceEntryById(id, {
+    await updatePurchaseEntryById(id, {
       ...payload,
       modified_by: userName,
     });
@@ -240,18 +199,12 @@ export default function InvoiceEntryPage() {
       weight_unit: "kg",
       grn_no: "",
       entry_date: format(new Date(), "yyyy-MM-dd"),
-      bardana: 0,
-      mazdoori: 0,
-      munshiana: 0,
-      charsadna: 0,
-      walai: 0,
-      tol: 0,
     });
   };
 
   const deleteEntry = async (id: string) => {
     if (!confirm("Delete this entry?")) return;
-    await deleteInvoiceEntryById(id, userName);
+    await deletePurchaseEntryById(id, userName);
   };
 
   const filtered = entries.filter(
@@ -259,7 +212,7 @@ export default function InvoiceEntryPage() {
       e.account_name?.toLowerCase().includes(search.toLowerCase()) ||
       e.supplier?.toLowerCase().includes(search.toLowerCase()) ||
       e.vehicle_numbers?.toLowerCase().includes(search.toLowerCase()) ||
-      e.invoice_no?.toLowerCase().includes(search.toLowerCase())
+      e.purchase_no?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -269,7 +222,7 @@ export default function InvoiceEntryPage() {
       <Card className="w-full bg-gray-300 border border-gray-400 shadow-sm">
         <CardHeader className="py-2 px-3 sm:px-4">
           <CardTitle className="text-lg sm:text-xl font-bold">
-            Invoice Entry {editingId ? "(Editing)" : ""}
+            Purchase Entry {editingId ? "(Editing)" : ""}
           </CardTitle>
         </CardHeader>
 
@@ -279,9 +232,9 @@ export default function InvoiceEntryPage() {
           <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
 
             <div>
-              <Label>Invoice Number</Label>
+              <Label>Purchase Number</Label>
               <Input
-                value={invoiceNo}
+                value={purchaseNo}
                 readOnly
                 className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-gray-200 text-gray-700 font-semibold cursor-not-allowed"
               />
@@ -371,72 +324,7 @@ export default function InvoiceEntryPage() {
 
           </div>
 
-          {/* Second Row - Additional Adjustment Fields */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-
-            <div>
-              <Label>Bardana</Label>
-              <Input
-                type="number"
-                step="0.01"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("bardana", { valueAsNumber: true })}
-              />
-            </div>
-
-            <div>
-              <Label>Mazdoori</Label>
-              <Input
-                type="number"
-                step="0.01"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("mazdoori", { valueAsNumber: true })}
-              />
-            </div>
-
-            <div>
-              <Label>Munshiana</Label>
-              <Input
-                type="number"
-                step="0.01"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("munshiana", { valueAsNumber: true })}
-              />
-            </div>
-
-            <div>
-              <Label>Charsadna</Label>
-              <Input
-                type="number"
-                step="0.01"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("charsadna", { valueAsNumber: true })}
-              />
-            </div>
-
-            <div>
-              <Label>Walai</Label>
-              <Input
-                type="number"
-                step="0.01"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("walai", { valueAsNumber: true })}
-              />
-            </div>
-
-            <div>
-              <Label>Tol</Label>
-              <Input
-                type="number"
-                step="0.01"
-                className="h-9 border-2 border-black focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                {...form.register("tol", { valueAsNumber: true })}
-              />
-            </div>
-
-          </div>
-
-          {/* Third Row */}
+          {/* Second Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
             <div className="md:col-span-2">
@@ -478,21 +366,11 @@ export default function InvoiceEntryPage() {
           <div className="p-3 bg-white rounded border border-gray-500 space-y-1">
             <div className="flex justify-between font-semibold">
               <span>Total Weight:</span>
-              <span>{totalWeight.toFixed(0)} {unit === "bags" ? "KG" : unitLabelMap[unit]}</span>
-            </div>
-
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Base Amount:</span>
-              <span>Rs. {baseAmount.toFixed(2)}</span>
-            </div>
-
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Adjustments:</span>
-              <span>Rs. {totalAdjustments.toFixed(2)}</span>
+              <span>{totalWeight.toFixed(2)} {unit === "bags" ? "KG" : unitLabelMap[unit]}</span>
             </div>
 
             <div className="flex justify-between font-bold text-lg border-t pt-1">
-              <span>Final Amount:</span>
+              <span>Total Amount:</span>
               <span className="text-green-600">Rs. {finalAmount.toFixed(2)}</span>
             </div>
           </div>
@@ -500,13 +378,13 @@ export default function InvoiceEntryPage() {
         </CardContent>
       </Card>
 
-      {/* TABLE CARDS SECTION */}
+      {/* TABLE SECTION */}
       <Card className="w-full border border-gray-300 shadow-sm">
         <CardHeader className="py-2 px-3 sm:px-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-              <CardTitle className="text-lg sm:text-xl font-bold">Invoice Entries</CardTitle>
+              <CardTitle className="text-lg sm:text-xl font-bold">Purchase Entries</CardTitle>
 
               <Input
                 type="text"
@@ -536,8 +414,8 @@ export default function InvoiceEntryPage() {
 
                   <div className="flex justify-between">
                     <div>
-                      <p className="text-xs text-gray-500">Invoice #</p>
-                      <p className="font-bold text-sm text-blue-600">{entry.invoice_no}</p>
+                      <p className="text-xs text-gray-500">Purchase #</p>
+                      <p className="font-bold text-sm text-blue-600">{entry.purchase_no}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-gray-500">Date</p>
@@ -582,20 +460,6 @@ export default function InvoiceEntryPage() {
                     </p>
                   </div>
 
-                  {entry.vehicle_numbers && (
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-500">Vehicle Numbers</p>
-                      <p className="text-sm">{entry.vehicle_numbers}</p>
-                    </div>
-                  )}
-
-                  {entry.grn_no && (
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-500">GRN No</p>
-                      <p className="text-sm">{entry.grn_no}</p>
-                    </div>
-                  )}
-
                   <div className="flex gap-2 mt-2 pt-2 border-t">
                     <Button
                       size="sm"
@@ -609,7 +473,7 @@ export default function InvoiceEntryPage() {
                     <Button
                       size="sm"
                       className="bg-blue-700 text-white"
-                      onClick={() => openInvoice(entry, "import")}
+                      onClick={() => openPurchase(entry, "purchase")}
                     >
                       <Printer size={14} />
                     </Button>
@@ -633,7 +497,7 @@ export default function InvoiceEntryPage() {
             <Table className="w-full text-sm">
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b border-gray-300">
-                  <TableHead className="border-r">Invoice#</TableHead>
+                  <TableHead className="border-r">Purchase#</TableHead>
                   <TableHead className="border-r">Date</TableHead>
                   <TableHead className="border-r">Account</TableHead>
                   <TableHead className="border-r">Product</TableHead>
@@ -647,7 +511,7 @@ export default function InvoiceEntryPage() {
               <TableBody>
                 {filtered.map((entry) => (
                   <TableRow key={entry.id} className="border-b hover:bg-gray-50">
-                    <TableCell>{entry.invoice_no}</TableCell>
+                    <TableCell>{entry.purchase_no}</TableCell>
                     <TableCell>
                       {format(
                         entry.entry_date?.toDate
@@ -681,7 +545,7 @@ export default function InvoiceEntryPage() {
                       <Button
                         size="sm"
                         className="bg-blue-700 text-white"
-                        onClick={() => openInvoice(entry, "import")}
+                        onClick={() => openPurchase(entry, "purchase")}
                       >
                         Print
                       </Button>
