@@ -31,8 +31,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Dashboard", icon: LayoutDashboard, path: "/" },
     { name: "Accounts", icon: Users, path: "/accounts" },
     { name: "Cashbook", icon: BookOpen, path: "/cashbook" },
-    { name: "Invoices", icon: Truck, path: "/goods-received" },
+    { name: "Invoices", icon: FileText, path: "/goods-received" },
     { name: "Purchase", icon: FolderSearch, path: "/purchase" },
+
 
     {
       name: "Reports",
@@ -45,6 +46,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         // { name: "Credit & Debit Report", path: "/reports/credit-debit" }
       ],
     },
+    {name: "Logs", icon: FileText, path: "/logs"}
   ];
 
   const closeSidebar = () => setSidebarOpen(false);

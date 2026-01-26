@@ -14,7 +14,7 @@ import AccountsEntry from "./pages/accounts/AccountsEntry";
 import CashbookEntry from "./pages/cashbook/CashbookEntry";
 import GoodsReceivedEntry from "./pages/Invoice/Invoices";
 import PurchaseEntryPage from "./pages/purchase/purchase";
-// import DataImport from "./pages/utility/DataImport";
+import Logs from "./pages/logs";
 import LedgerReport from "./pages/reports/LedgerReport";
 import CashbookReport  from "./pages/reports/CashbookReport";
 import CreditDebitReport from "./pages/reports/CreditDebitReport";
@@ -52,6 +52,7 @@ const App = () => (
             <Route path="/reports/cashbook" element={<ProtectedPage><CashbookReport /></ProtectedPage>} />
             <Route path="/invoice-preview" element={<InvoicePreview />} />
             <Route path="/purchase-preview" element={<PurchasePreview />} />
+            <Route path="/logs" element={<ProtectedPage><Logs /></ProtectedPage>} />
             {/* <Route path="/utility/import" element={<ProtectedPage><DataImport /></ProtectedPage>} /> */}
             <Route path="/reports/ledger" element={<ProtectedPage><LedgerReport /></ProtectedPage>} />
             <Route path="/reports/credit-debit" element={<ProtectedPage><CreditDebitReport /></ProtectedPage>} />
