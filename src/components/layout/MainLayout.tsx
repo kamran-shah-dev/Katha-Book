@@ -13,6 +13,8 @@ import {
   LogOut,
   Menu,
   X,
+  Receipt,
+  ShoppingCart,
 } from "lucide-react";
 
 interface MainLayoutProps {
@@ -31,8 +33,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Dashboard", icon: LayoutDashboard, path: "/" },
     { name: "Accounts", icon: Users, path: "/accounts" },
     { name: "Cashbook", icon: BookOpen, path: "/cashbook" },
-    { name: "Invoices", icon: FileText, path: "/goods-received" },
-    { name: "Purchase", icon: FolderSearch, path: "/purchase" },
+    { name: "Invoices", icon: Receipt, path: "/goods-received" },
+    { name: "Purchase", icon: ShoppingCart, path: "/purchase" },
 
 
     {
