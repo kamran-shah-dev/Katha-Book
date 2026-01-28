@@ -85,8 +85,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <X size={24} />
         </button>
 
-        <div className="p-6 text-2xl font-bold border-4 border-[#6F4E37] bg-white">
-          <img src="/logo.jpeg" alt="Katha Book Logo" className="h-12 w-32 mx-auto" />
+        <div className="text-2xl font-bold border-4 border-[#6F4E37] bg-[#3B2F2F]">
+          <img src="/logo.jpeg" alt="Katha Book Logo" className="h-full w-full object-cover"/>
         </div>
 
         <nav className="flex-1 overflow-y-auto">
